@@ -126,6 +126,6 @@ jspm_packages/
 .tern-port
 
 # Screenshots (for development)
-screenshots/*.png
-screenshots/*.jpg
+# screenshots/*.png
+# screenshots/*.jpg
 !screenshots/placeholder.txt
