@@ -146,9 +146,9 @@ Each conversation gets assigned one of 8 unique AI personalities:
 ┌─────────────────┐    HTTP/REST    ┌─────────────────┐
 │ React Frontend  │ ◄─────────────► │ FastAPI Backend │
 │                 │                 │                 │
-│  -Chat Interface│                 │  - REST API     │
-│  -State Mgmt    │                 │  - OpenAI Int.  │
-│  -TypeScript    │                 │  - SQLAlchemy   │
+│ - Chat Interface│                 │ - REST API      │
+│ - State Mgmt    │                 │ - OpenAI Int.   │
+│ - TypeScript    │                 │ - SQLAlchemy    │
 └─────────────────┘                 └─────────────────┘
                                               │
                                               ▼
