@@ -1,0 +1,13 @@
+Screenshots will be added here for the GitHub repository.
+
+Planned screenshots:
+- chat-interface.png - Main chat interface showing conversation
+- conversation-history.png - Sidebar showing list of conversations
+- ai-personalities.png - Examples of different AI personality responses
+- api-docs.png - FastAPI automatic documentation interface
+- mobile-responsive.png - Mobile view of the application
+
+To add screenshots:
+1. Take screenshots of the running application
+2. Save them in this directory with the names above
+3. Update README.md to reference the actual screenshot files
