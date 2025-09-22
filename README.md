@@ -35,31 +35,31 @@ Each conversation gets assigned one of 8 unique AI personalities:
 ## 📸 Screenshots
 
 ### Chat Interface
-![Chat Interface](screenshots/Chat%20Interface.png)
+![Chat Interface](./screenshots/Chat%20Interface.png)
 *Modern React chat interface with real-time messaging*
 
 ### Conversation History
-![Conversation History](screenshots/Conversation%20History.png)
+![Conversation History](./screenshots/Conversation%20History.png)
 *Persistent conversation history with sidebar navigation*
 
 ### AI Personality System
-![Academic Personality](screenshots/Personality%201%20-%20Academic%20-%20Detailed%20technical%20explanation.png)
+![Academic Personality](./screenshots/Personality%201%20-%20Academic%20-%20Detailed%20technical%20explanation.png)
 *Academic personality providing detailed technical explanations*
 
-![Conversational Personality](screenshots/Personality%202%20-%20Conversational%20-%20Friendly%2C%20accessible%20response%20.png)
+![Conversational Personality](./screenshots/Personality%202%20-%20Conversational%20-%20Friendly%2C%20accessible%20response%20.png)
 *Conversational personality with friendly, accessible responses*
 
-![Enthusiastic Personality](screenshots/Personality%203%20-%20Enthusiastic%20-%20Excited%2C%20future-focused%20answer.png)
+![Enthusiastic Personality](./screenshots/Personality%203%20-%20Enthusiastic%20-%20Excited%2C%20future-focused%20answer.png)
 *Enthusiastic personality delivering excited, future-focused answers*
 
 ### Memory & Context Features
-![Memory Test](screenshots/Memory%20Test.png)
+![Memory Test](./screenshots/Memory%20Test.png)
 *Demonstrating conversation memory across sessions*
 
-![Context Continuity](screenshots/Context%20Continuity.png)
+![Context Continuity](./screenshots/Context%20Continuity.png)
 *Showing context continuity and conversation flow*
 
-![New Conversation](screenshots/New%20Conversation.png)
+![New Conversation](./screenshots/New%20Conversation.png)
 *Creating new conversations with unique AI personalities*
 
 ## 🛠️ Tech Stack
@@ -144,7 +144,7 @@ Each conversation gets assigned one of 8 unique AI personalities:
 ### System Design
 ```
 ┌─────────────────┐    HTTP/REST    ┌─────────────────┐
-│   React Frontend │ ◄─────────────► │  FastAPI Backend│
+│   React Frontend│ ◄─────────────► │  FastAPI Backend │
 │                 │                 │                 │
 │  - Chat Interface│                 │  - REST API     │
 │  - State Mgmt   │                 │  - OpenAI Int.  │
