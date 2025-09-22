@@ -153,10 +153,10 @@ Each conversation gets assigned one of 8 unique AI personalities:
                                               │
                                               ▼
                                     ┌─────────────────┐
-                                    │  SQLite Database│
+                                    │ SQLite Database │
                                     │                 │
-                                    │  - Conversations│
-                                    │  - Messages     │
+                                    │ - Conversations │
+                                    │ - Messages      │
                                     └─────────────────┘
 ```
 
