@@ -12,6 +12,7 @@ from ...schemas.conversation import (
     MessageRead,
 )
 from ...services.openai_service import get_chat_completion
+from ...services.cleanup_service import cleanup_old_conversations, cleanup_excess_conversations, get_database_stats
 from typing import List
 
 
@@ -87,6 +88,38 @@ def add_message_and_respond_endpoint(
         MessageCreate(role="assistant", content=assistant_content),
     )
     return assistant_message
+
+
+@router.get("/stats", response_model=dict)
+def get_database_stats_endpoint():
+    """Get database statistics for monitoring"""
+    return get_database_stats()
+
+
+@router.post("/cleanup", response_model=dict)
+@limiter.limit("1/minute")  # Very restrictive - only 1 cleanup per minute
+def cleanup_database_endpoint(request: Request):
+    """Automated cleanup of old conversations - prevents database bloat"""
+    try:
+        # Clean up conversations older than 7 days
+        old_conv_deleted, old_msg_deleted = cleanup_old_conversations(days_old=7)
+        
+        # Keep only 30 most recent conversations
+        excess_conv_deleted, excess_msg_deleted = cleanup_excess_conversations(max_conversations=30)
+        
+        total_conversations = old_conv_deleted + excess_conv_deleted
+        total_messages = old_msg_deleted + excess_msg_deleted
+        
+        return {
+            "message": "Database cleanup completed",
+            "conversations_deleted": total_conversations,
+            "messages_deleted": total_messages,
+            "old_conversations_cleaned": old_conv_deleted,
+            "excess_conversations_cleaned": excess_conv_deleted
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
 
 
 @router.delete("/", response_model=dict)

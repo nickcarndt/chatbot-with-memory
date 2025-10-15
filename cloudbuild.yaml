@@ -65,7 +65,12 @@ steps:
       - '--min-instances'
       - '0'
       - '--max-instances'
+      - '5'
+      - '--concurrency'
       - '10'
+      - '--timeout'
+      - '300'
+      - '--cpu-throttling'
       - '--set-env-vars'
       - 'DATABASE_URL=sqlite:///./chat.db,HOST=0.0.0.0,DEBUG=False'
       - '--set-secrets'
@@ -94,7 +99,11 @@ steps:
       - '--min-instances'
       - '0'
       - '--max-instances'
-      - '5'
+      - '3'
+      - '--concurrency'
+      - '100'
+      - '--timeout'
+      - '60'
 
 # Store images in Google Container Registry
 images:
