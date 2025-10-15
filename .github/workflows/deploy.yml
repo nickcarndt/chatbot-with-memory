@@ -22,6 +22,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Update submodules
+        run: git submodule update --init --recursive
 
       - name: Debug directory structure
         run: |
@@ -74,6 +79,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Google Auth
         id: auth
@@ -137,6 +144,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
