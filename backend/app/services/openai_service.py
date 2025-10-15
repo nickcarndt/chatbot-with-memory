@@ -6,13 +6,26 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# Try to get OpenAI API key from environment or Secret Manager
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Initialize OpenAI client with proper error handling
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+else:
+    client = None
 
 
 def get_chat_completion(messages: List[dict], conversation_id: int = None) -> str:
     if not OPENAI_API_KEY:
+        print(f"DEBUG: OPENAI_API_KEY is not set. Environment variables: {dict(os.environ)}")
         raise RuntimeError("OPENAI_API_KEY is not set")
+    
+    if not client:
+        print(f"DEBUG: OpenAI client is not initialized")
+        raise RuntimeError("OpenAI client is not initialized")
+    
+    print(f"DEBUG: OpenAI API key found, length: {len(OPENAI_API_KEY) if OPENAI_API_KEY else 0}")
     
     # Add conversation context and variety
     system_messages = [
