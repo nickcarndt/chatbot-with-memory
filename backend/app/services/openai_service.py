@@ -1,13 +1,13 @@
 import os
 from typing import List
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-openai.api_key = OPENAI_API_KEY
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def get_chat_completion(messages: List[dict], conversation_id: int = None) -> str:
@@ -36,14 +36,18 @@ def get_chat_completion(messages: List[dict], conversation_id: int = None) -> st
     # Add system message at the beginning
     enhanced_messages = [{"role": "system", "content": system_message}] + messages
     
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=enhanced_messages,
-        temperature=0.8,  # Increased for more variety
-        max_tokens=1000,  # Limit response length
-        presence_penalty=0.6,  # Encourage new topics
-        frequency_penalty=0.3,  # Reduce repetition
-    )
-    return response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=enhanced_messages,
+            temperature=0.8,  # Increased for more variety
+            max_tokens=1000,  # Limit response length
+            presence_penalty=0.6,  # Encourage new topics
+            frequency_penalty=0.3,  # Reduce repetition
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        # Return a fallback message if OpenAI API fails
+        return f"I apologize, but I'm having trouble connecting to my AI service right now. Error: {str(e)}"
 
 
