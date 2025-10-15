@@ -21,6 +21,10 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.get("/health")
+    def health_check():
+        return {"status": "healthy", "service": "chatbot-backend"}
+
     @app.on_event("startup")
     def on_startup() -> None:
         Base.metadata.create_all(bind=engine)
