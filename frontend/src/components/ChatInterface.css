@@ -22,8 +22,13 @@
   font-size: 1.5rem;
 }
 
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
 .new-conversation-btn {
-  width: 100%;
+  flex: 1;
   padding: 10px;
   background-color: #3498db;
   color: white;
@@ -36,6 +41,22 @@
 
 .new-conversation-btn:hover {
   background-color: #2980b9;
+}
+
+.clear-history-btn {
+  flex: 1;
+  padding: 10px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.clear-history-btn:hover {
+  background-color: #c0392b;
 }
 
 .conversation-list {
