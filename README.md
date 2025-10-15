@@ -9,6 +9,18 @@
 
 A full-stack conversational AI application with persistent memory and dynamic personality system. Built with FastAPI backend, React frontend, and SQLite database for conversation storage.
 
+## 🛡️ Production Safety & Cost Control
+
+This application includes comprehensive safety measures to prevent abuse and control costs:
+
+- **Rate Limiting**: 5 messages/minute, 3 conversations/minute per IP
+- **Resource Limits**: Max 5 backend instances, 3 frontend instances  
+- **Database Controls**: Max 50 conversations, auto-cleanup after 7 days
+- **Manual Controls**: One-click "Clear All" button for cost control
+- **Monitoring**: Database stats and cleanup endpoints
+
+See [PRODUCTION_SAFETY.md](PRODUCTION_SAFETY.md) for detailed safety documentation.
+
 ## 🚀 Features
 
 - **Real-time Chat Interface**: Modern React frontend with responsive design

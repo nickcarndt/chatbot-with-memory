@@ -135,7 +135,39 @@ key.json
 !package.json
 !package-lock.json
 !tsconfig.json
-!app.yaml
 !cloudbuild.yaml
 service-account-*.json
 gcp-credentials.json
+gcp-key.json
+credentials.json
+
+# Security sensitive files
+secrets/
+.secrets/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Database files
+chat.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Local development
+.local/
+local/
+*.local
