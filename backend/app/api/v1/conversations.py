@@ -70,24 +70,38 @@ def add_message_and_respond_endpoint(
     request: Request,
     conversation_id: int, payload: MessageCreate, db: Session = Depends(get_db)
 ):
-    conversation = crud.get_conversation(db, conversation_id)
-    if not conversation:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    # Save user message
-    _ = crud.add_message(db, conversation_id, payload)
-    # Build history for LLM
-    history = [
-        {"role": m.role, "content": m.content}
-        for m in crud.get_messages(db, conversation_id)
-    ]
-    # Get assistant response
-    assistant_content = get_chat_completion(history, conversation_id)
-    assistant_message = crud.add_message(
-        db,
-        conversation_id,
-        MessageCreate(role="assistant", content=assistant_content),
-    )
-    return assistant_message
+    try:
+        conversation = crud.get_conversation(db, conversation_id)
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        # Save user message
+        user_message = crud.add_message(db, conversation_id, payload)
+        
+        # Build history for LLM
+        history = [
+            {"role": m.role, "content": m.content}
+            for m in crud.get_messages(db, conversation_id)
+        ]
+        
+        # Get assistant response
+        try:
+            assistant_content = get_chat_completion(history, conversation_id)
+        except Exception as e:
+            # If OpenAI fails, return a fallback message
+            assistant_content = f"I apologize, but I'm having trouble connecting to my AI service right now. Please try again later."
+        
+        assistant_message = crud.add_message(
+            db,
+            conversation_id,
+            MessageCreate(role="assistant", content=assistant_content),
+        )
+        return assistant_message
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @router.get("/stats", response_model=dict)
