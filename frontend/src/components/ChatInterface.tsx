@@ -51,6 +51,19 @@ const ChatInterface: React.FC = () => {
     }
   };
 
+  const createNewConversation = async () => {
+    try {
+      const newConversation = await conversationAPI.createConversation({
+        title: 'New Conversation'
+      });
+      setConversations(prev => [newConversation, ...prev]);
+      setCurrentConversation(newConversation);
+      setMessages([]);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+    }
+  };
+
   const selectConversation = async (conversation: Conversation) => {
     setCurrentConversation(conversation);
     try {
@@ -81,11 +94,12 @@ const ChatInterface: React.FC = () => {
         content: inputMessage
       });
 
+      // The backend returns the assistant message, not the user message
       const assistantMessage: Message = {
-        id: Date.now() + 1,
-        role: 'assistant',
+        id: response.id,
+        role: response.role,
         content: response.content,
-        created_at: new Date().toISOString()
+        created_at: response.created_at
       };
 
       setMessages(prev => [...prev, assistantMessage]);
