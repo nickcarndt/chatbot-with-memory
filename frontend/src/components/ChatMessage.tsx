@@ -13,7 +13,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       <div className="message-content">
         <div className="message-text">{message.content}</div>
         <div className="message-timestamp">
-          {new Date(message.timestamp).toLocaleTimeString()}
+          {new Date(message.created_at).toLocaleTimeString()}
         </div>
       </div>
     </div>
