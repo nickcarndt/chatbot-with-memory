@@ -6,7 +6,7 @@ This deployment demonstrates **key Solutions Architect skills** required for the
 
 - ✅ **End-to-end deployment pipeline** (prototype to production)
 - ✅ **Infrastructure and network architecture considerations**
-- ✅ **CI/CD automation** with GitHub Actions + Cloud Build
+- ✅ **CI/CD automation** with pure Cloud Build triggers
 - ✅ **Cost-effective scaling** with Cloud Run
 - ✅ **Security best practices** with Secret Manager
 - ✅ **Container optimization** with multi-stage Dockerfiles
