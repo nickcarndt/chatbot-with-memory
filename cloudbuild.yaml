@@ -72,9 +72,7 @@ steps:
       - '300'
       - '--cpu-throttling'
       - '--set-env-vars'
-      - 'DATABASE_URL=sqlite:///./chat.db,HOST=0.0.0.0,DEBUG=False'
-      - '--set-secrets'
-      - 'OPENAI_API_KEY=openai-api-key:latest'
+      - 'DATABASE_URL=sqlite:///./chat.db,HOST=0.0.0.0,DEBUG=False,OPENAI_API_KEY=REDACTED'
 
   # Deploy frontend to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
