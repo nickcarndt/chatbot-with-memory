@@ -1,5 +1,6 @@
 # Cloud Build configuration for automated CI/CD pipeline
 # This demonstrates Solutions Architect skills in automation and DevOps
+# Optimized for Cloud Build triggers with native GCP integration
 
 steps:
   # Build and push backend container
@@ -30,7 +31,7 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/chatbot-frontend:latest'
       - '--build-arg'
-      - 'REACT_APP_API_URL=https://chatbot-backend-4rfvvt46ma-uc.a.run.app/api/v1'
+      - 'REACT_APP_API_URL=https://chatbot-backend-${_BACKEND_HASH}-uc.a.run.app/api/v1'
       - '-f'
       - 'frontend/Dockerfile'
       - '.'
@@ -107,4 +108,8 @@ options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
   diskSizeGb: 100
+
+# Substitution variables for Cloud Build triggers
+substitutions:
+  _BACKEND_HASH: '4rfvvt46ma'  # Cloud Run service hash for backend
 
