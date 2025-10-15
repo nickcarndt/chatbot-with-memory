@@ -34,16 +34,20 @@ const ChatInterface: React.FC = () => {
     }
   };
 
-  const createNewConversation = async () => {
+  const clearAllConversations = async () => {
+    if (!window.confirm('Are you sure you want to clear all conversations? This cannot be undone.')) {
+      return;
+    }
+    
     try {
-      const newConversation = await conversationAPI.createConversation({
-        title: 'New Conversation'
-      });
-      setConversations(prev => [newConversation, ...prev]);
-      setCurrentConversation(newConversation);
+      await conversationAPI.clearAllConversations();
+      setConversations([]);
+      setCurrentConversation(null);
       setMessages([]);
+      alert('All conversations cleared successfully!');
     } catch (error) {
-      console.error('Error creating conversation:', error);
+      console.error('Error clearing conversations:', error);
+      alert('Failed to clear conversations. Please try again.');
     }
   };
 
@@ -106,9 +110,14 @@ const ChatInterface: React.FC = () => {
       <div className="sidebar">
         <div className="sidebar-header">
           <h2>Chatbot with Memory 🚀</h2>
-          <button onClick={createNewConversation} className="new-conversation-btn">
-            + New Chat
-          </button>
+          <div className="button-group">
+            <button onClick={createNewConversation} className="new-conversation-btn">
+              + New Chat
+            </button>
+            <button onClick={clearAllConversations} className="clear-history-btn">
+              🗑️ Clear All
+            </button>
+          </div>
         </div>
         <ConversationList
           conversations={conversations}

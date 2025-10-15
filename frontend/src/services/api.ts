@@ -40,6 +40,16 @@ export const conversationAPI = {
     const response = await api.post<any>(`/conversations/${conversationId}/messages`, data);
     return response.data;
   },
+
+  // Clear all conversations
+  clearAllConversations: async (): Promise<void> => {
+    await api.delete('/conversations/');
+  },
+
+  // Delete a specific conversation
+  deleteConversation: async (id: number): Promise<void> => {
+    await api.delete(`/conversations/${id}`);
+  },
 };
 
 export default api;
