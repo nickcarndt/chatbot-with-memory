@@ -78,8 +78,11 @@ if gcloud run services describe chatbot-backend --region=us-central1 --project="
     --format="value(spec.template.spec.template.spec.containers[0].env[].name)" \
     | grep -q "OPENAI_API_KEY"; then
     print_success "Cloud Run service has OPENAI_API_KEY environment variable configured."
+elif gcloud run services describe chatbot-backend --region=us-central1 --project="$PROJECT_ID" \
+    --format="yaml" | grep -A 5 -B 5 "OPENAI_API_KEY" | grep -q "secretKeyRef"; then
+    print_success "Cloud Run service has OPENAI_API_KEY configured as secret (correct!)."
 else
-    print_error "Cloud Run service does NOT have OPENAI_API_KEY environment variable configured."
+    print_error "Cloud Run service does NOT have OPENAI_API_KEY configured."
 fi
 
 # 5. Test API key locally (if possible)
