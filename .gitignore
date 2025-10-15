@@ -129,4 +129,13 @@ jspm_packages/
 # screenshots/*.png
 # screenshots/*.jpg
 !screenshots/placeholder.txt
+# Google Cloud credentials and secrets
 key.json
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!app.yaml
+!cloudbuild.yaml
+service-account-*.json
+gcp-credentials.json
