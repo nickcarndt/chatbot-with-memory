@@ -11,3 +11,4 @@ function App() {
 }
 
 export default App;// Automated deployment test
+// Trigger deployment with fixed permissions
