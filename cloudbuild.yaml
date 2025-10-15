@@ -108,6 +108,3 @@ options:
   machineType: 'E2_HIGHCPU_8'
   diskSizeGb: 100
 
-# Substitution variables
-substitutions:
-  _PROJECT_NUMBER: '${PROJECT_NUMBER}'
