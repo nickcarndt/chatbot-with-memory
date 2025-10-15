@@ -15,9 +15,9 @@ This deployment demonstrates **key Solutions Architect skills** required for the
 ## Architecture
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   GitHub Repo   │───▶│  GitHub Actions  │───▶│   Cloud Build   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+┌─────────────────┐    ┌─────────────────┐
+│   GitHub Repo   │───▶│   Cloud Build   │
+└─────────────────┘    └─────────────────┘
                                                          │
                                                          ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
@@ -98,7 +98,7 @@ gcloud secrets create openai-api-key --data-file=-
 
 ## CI/CD Pipeline Features
 
-### GitHub Actions Workflow
+### Cloud Build Trigger
 - **Automated testing** on every push
 - **Security scanning** with Trivy
 - **Multi-stage deployment** (test → staging → production)
