@@ -17,6 +17,7 @@ def cleanup_old_conversations(days_old: int = 7) -> Tuple[int, int]:
     """
     db = SessionLocal()
     try:
+        from sqlalchemy import text
         cutoff_date = datetime.utcnow() - timedelta(days=days_old)
         
         # Find old conversations

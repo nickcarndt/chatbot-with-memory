@@ -142,9 +142,10 @@ def clear_all_conversations_endpoint(request: Request, db: Session = Depends(get
     """Clear all conversations and messages - useful for cost control"""
     try:
         # Delete all messages first (due to foreign key constraints)
-        db.execute("DELETE FROM messages")
+        from sqlalchemy import text
+        db.execute(text("DELETE FROM messages"))
         # Delete all conversations
-        db.execute("DELETE FROM conversations")
+        db.execute(text("DELETE FROM conversations"))
         db.commit()
         return {"message": "All conversations cleared successfully"}
     except Exception as e:
