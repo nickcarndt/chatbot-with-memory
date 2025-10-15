@@ -64,7 +64,7 @@ const ChatInterface: React.FC = () => {
       id: Date.now(),
       role: 'user',
       content: inputMessage,
-      timestamp: new Date().toISOString()
+      created_at: new Date().toISOString()
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -81,7 +81,7 @@ const ChatInterface: React.FC = () => {
         id: Date.now() + 1,
         role: 'assistant',
         content: response.content,
-        timestamp: new Date().toISOString()
+        created_at: new Date().toISOString()
       };
 
       setMessages(prev => [...prev, assistantMessage]);
