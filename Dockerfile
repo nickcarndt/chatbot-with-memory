@@ -54,4 +54,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
 
 # Production-ready command with optimized settings
-CMD ["sh", "-c", "uvicorn app.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8080} --workers 1 --access-log"]
+CMD ["sh", "-c", "PYTHONUNBUFFERED=1 uvicorn app.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8080} --workers 1 --access-log --log-level debug"]
