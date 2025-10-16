@@ -104,6 +104,21 @@ const ChatInterface: React.FC = () => {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      
+      // Refresh conversation data to get updated title
+      try {
+        const updatedConversation = await conversationAPI.getConversation(currentConversation.id);
+        setCurrentConversation(updatedConversation);
+        
+        // Update the conversation in the conversations list
+        setConversations(prev => 
+          prev.map(conv => 
+            conv.id === currentConversation.id ? updatedConversation : conv
+          )
+        );
+      } catch (error) {
+        console.error('Error refreshing conversation:', error);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       // Remove the user message if sending failed
