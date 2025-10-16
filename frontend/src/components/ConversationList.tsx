@@ -12,6 +12,10 @@ const ConversationList: React.FC<ConversationListProps> = ({
   currentConversation,
   onSelectConversation
 }) => {
+  // Debug: Log conversations to see what titles are being received
+  console.log('ConversationList - conversations:', conversations);
+  console.log('ConversationList - conversation titles:', conversations.map(c => ({ id: c.id, title: c.title })));
+  
   return (
     <div className="conversation-list">
       {conversations.length === 0 ? (

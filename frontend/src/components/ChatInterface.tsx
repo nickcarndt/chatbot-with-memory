@@ -28,6 +28,8 @@ const ChatInterface: React.FC = () => {
   const loadConversations = async () => {
     try {
       const data = await conversationAPI.getConversations();
+      console.log('ChatInterface - loaded conversations:', data);
+      console.log('ChatInterface - conversation titles:', data.map(c => ({ id: c.id, title: c.title })));
       setConversations(data);
     } catch (error) {
       console.error('Error loading conversations:', error);
@@ -53,9 +55,8 @@ const ChatInterface: React.FC = () => {
 
   const createNewConversation = async () => {
     try {
-      const newConversation = await conversationAPI.createConversation({
-        title: 'New Conversation'
-      });
+      const newConversation = await conversationAPI.createConversation({});
+      console.log('ChatInterface - created new conversation:', newConversation);
       setConversations(prev => [newConversation, ...prev]);
       setCurrentConversation(newConversation);
       setMessages([]);
