@@ -78,6 +78,18 @@ def add_message_and_respond_endpoint(
         # Save user message
         user_message = crud.add_message(db, conversation_id, payload)
         
+        # Update conversation title if this is the first user message
+        if conversation.title == "New Conversation" and payload.role == "user":
+            # Create title from first 50-60 characters of the message
+            title = payload.content.strip()
+            if len(title) > 60:
+                title = title[:57] + "..."
+            elif len(title) > 50:
+                title = title[:50] + "..."
+            
+            # Update the conversation title
+            crud.update_conversation_title(db, conversation_id, title)
+        
         # Build history for LLM
         history = [
             {"role": m.role, "content": m.content}

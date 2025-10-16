@@ -37,3 +37,23 @@ def get_messages(db: Session, conversation_id: int) -> List[Message]:
     )
 
 
+def update_conversation_title(db: Session, conversation_id: int, title: str) -> Optional[Conversation]:
+    """Update conversation title if it's still the default 'New Conversation'"""
+    conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    if conversation and conversation.title == "New Conversation":
+        conversation.title = title
+        db.commit()
+        db.refresh(conversation)
+    return conversation
+
+
+def get_first_user_message(db: Session, conversation_id: int) -> Optional[Message]:
+    """Get the first user message in a conversation"""
+    return (
+        db.query(Message)
+        .filter(Message.conversation_id == conversation_id, Message.role == "user")
+        .order_by(Message.created_at.asc())
+        .first()
+    )
+
+
