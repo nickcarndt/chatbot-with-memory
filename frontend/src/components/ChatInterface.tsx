@@ -66,9 +66,12 @@ const ChatInterface: React.FC = () => {
   };
 
   const selectConversation = async (conversation: Conversation) => {
+    console.log('selectConversation called with:', conversation);
     setCurrentConversation(conversation);
     try {
+      console.log('Fetching conversation data for ID:', conversation.id);
       const conversationData = await conversationAPI.getConversation(conversation.id);
+      console.log('Conversation data received:', conversationData);
       setMessages(conversationData.messages || []);
     } catch (error) {
       console.error('Error loading conversation:', error);
