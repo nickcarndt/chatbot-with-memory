@@ -30,7 +30,10 @@ const ConversationList: React.FC<ConversationListProps> = ({
             className={`conversation-item ${
               currentConversation?.id === conversation.id ? 'active' : ''
             }`}
-            onClick={() => onSelectConversation(conversation)}
+            onClick={() => {
+              console.log('Conversation clicked:', conversation);
+              onSelectConversation(conversation);
+            }}
           >
             <div className="conversation-title">{conversation.title}</div>
             <div className="conversation-date">
