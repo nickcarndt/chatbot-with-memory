@@ -13,7 +13,7 @@ export interface Conversation {
 }
 
 export interface CreateConversationRequest {
-  title: string;
+  title?: string;
 }
 
 export interface SendMessageRequest {
