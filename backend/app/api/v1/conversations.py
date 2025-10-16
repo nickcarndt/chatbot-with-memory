@@ -80,12 +80,12 @@ def add_message_and_respond_endpoint(
         
         # Update conversation title if this is the first user message
         if conversation.title == "New Conversation" and payload.role == "user":
-            # Create title from first 50-60 characters of the message
+            # Create title from first 30-40 characters of the message
             title = payload.content.strip()
-            if len(title) > 60:
-                title = title[:57] + "..."
-            elif len(title) > 50:
-                title = title[:50] + "..."
+            if len(title) > 40:
+                title = title[:37] + "..."
+            elif len(title) > 30:
+                title = title[:30] + "..."
             
             # Update the conversation title
             crud.update_conversation_title(db, conversation_id, title)
@@ -114,6 +114,40 @@ def add_message_and_respond_endpoint(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.post("/update-titles", response_model=dict)
+def update_existing_conversation_titles_endpoint(db: Session = Depends(get_db)):
+    """Update existing conversations that still have 'New Conversation' titles"""
+    try:
+        # Get all conversations with default titles
+        conversations_to_update = db.query(Conversation).filter(
+            Conversation.title == "New Conversation"
+        ).all()
+        
+        updated_count = 0
+        for conversation in conversations_to_update:
+            # Get the first user message
+            first_user_message = crud.get_first_user_message(db, conversation.id)
+            if first_user_message:
+                # Create title from first 30-40 characters
+                title = first_user_message.content.strip()
+                if len(title) > 40:
+                    title = title[:37] + "..."
+                elif len(title) > 30:
+                    title = title[:30] + "..."
+                
+                # Update the conversation title
+                crud.update_conversation_title(db, conversation.id, title)
+                updated_count += 1
+        
+        return {
+            "message": f"Updated {updated_count} conversation titles",
+            "updated_count": updated_count
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating titles: {str(e)}")
 
 
 @router.get("/stats", response_model=dict)
