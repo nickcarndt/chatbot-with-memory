@@ -171,12 +171,11 @@ setup_cloud_build() {
 
 # Function to deploy initial services
 initial_deploy() {
-    print_status "Performing initial deployment..."
+    print_status "Initial deployment completed - trigger is now active"
+    print_status "Push code to GitHub to trigger automatic deployment"
     
-    # Submit build
-    gcloud builds submit --config cloudbuild.yaml
-    
-    print_success "Initial deployment completed"
+    # Note: Manual builds removed - using Cloud Build triggers only
+    # To deploy: git push origin master
 }
 
 # Function to display URLs
