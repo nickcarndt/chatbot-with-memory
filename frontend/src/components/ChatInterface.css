@@ -189,6 +189,14 @@
   font-weight: 400;
 }
 
+.user-message-time {
+  text-align: right;
+}
+
+.assistant-message-time {
+  text-align: left;
+}
+
 .typing-indicator {
   display: flex;
   gap: 4px;
