@@ -123,7 +123,7 @@ const ChatInterface: React.FC = () => {
     <div className="chat-interface">
       <div className="sidebar">
         <div className="sidebar-header">
-          <h2>Chatbot with Memory 🚀</h2>
+          <h2>Chatbot with Memory</h2>
           <div className="button-group">
             <button onClick={createNewConversation} className="new-conversation-btn">
               + New Chat
