@@ -5,6 +5,8 @@ import { eq, desc } from 'drizzle-orm';
 import { withLogging, getRequestId } from '@/lib/api-helpers';
 import { messages } from '@/lib/db/schema';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   return withLogging(request, async () => {
     const body = await request.json();

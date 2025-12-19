@@ -6,6 +6,8 @@ import { withLogging, getRequestId } from '@/lib/api-helpers';
 import { getChatCompletion } from '@/lib/llm';
 import { logInfo, logError } from '@/lib/logger';
 
+export const runtime = 'nodejs';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

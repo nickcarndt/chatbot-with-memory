@@ -4,6 +4,8 @@ import { conversations, messages } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { withLogging } from '@/lib/api-helpers';
 
+export const runtime = 'nodejs';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

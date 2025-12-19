@@ -85,9 +85,103 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 🧪 Smoke Test Endpoints
+## 🧪 Smoke Test
 
-Test the API endpoints:
+Run the automated end-to-end smoke test to validate the entire application:
+
+```bash
+npm run smoke
+```
+
+**What it tests:**
+1. ✅ Health check endpoint (`GET /api/health`) - validates server and database connectivity
+2. ✅ Create conversation (`POST /api/conversations`)
+3. ✅ Send message with memory (`POST /api/conversations/:id/messages`) - "Remember my favorite color is blue"
+4. ✅ Test memory retention (`POST /api/conversations/:id/messages`) - "What is my favorite color?" (asserts response contains "blue")
+5. ✅ Cleanup (`DELETE /api/conversations/:id`)
+
+**Expected Output:**
+```
+Starting Next.js dev server...
+Waiting for server to be ready...
+Server is ready!
+
+Starting smoke test...
+
+✓ Health check
+  Request ID: abc-123-def
+✓ Create conversation
+  Conversation ID: uuid-here
+  Request ID: xyz-789-ghi
+✓ Send message: Remember favorite color
+  Request ID: ...
+✓ Test memory: Ask about favorite color
+  Assistant response contains "blue": ✓
+  Response preview: Your favorite color is blue...
+  Request ID: ...
+✓ Delete conversation
+  Request ID: ...
+
+==================================================
+Smoke Test Summary
+==================================================
+✓ Health check
+✓ Create conversation
+✓ Send message: Remember favorite color
+✓ Test memory: Ask about favorite color
+✓ Delete conversation
+
+==================================================
+Total: 5 | Passed: 5 | Failed: 0
+Last Request ID: ...
+==================================================
+
+✓ All smoke tests passed!
+
+Stopping dev server...
+
+✓ Smoke test completed successfully!
+```
+
+**Exit Codes:**
+- `0` - All tests passed
+- `1` - One or more tests failed
+
+**Common Failures:**
+
+1. **Environment variables not set**
+   ```
+   Error: Missing or invalid environment variables: DATABASE_URL, OPENAI_API_KEY
+   ```
+   **Fix:** Ensure `.env` file exists with `DATABASE_URL` and `OPENAI_API_KEY`
+
+2. **Database connection failed**
+   ```
+   Health check failed: { ok: true, db: false }
+   ```
+   **Fix:** Verify `DATABASE_URL` is correct and database is accessible
+
+3. **Server failed to start**
+   ```
+   Server failed to start after maximum attempts
+   ```
+   **Fix:** Check if port 3000 is already in use: `lsof -ti:3000 | xargs kill -9`
+
+4. **OpenAI API error**
+   ```
+   OpenAI API error: ...
+   ```
+   **Fix:** Verify `OPENAI_API_KEY` is valid and has credits
+
+5. **Memory test failed**
+   ```
+   Response does not contain "blue"
+   ```
+   **Fix:** This indicates the AI didn't remember the context - check database connection and message persistence
+
+**Manual Endpoint Testing:**
+
+You can also test endpoints manually:
 
 ```bash
 # Health check
