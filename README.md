@@ -120,6 +120,24 @@ All responses include `X-Request-ID` header for tracing.
 }
 ```
 
+## Security Hygiene
+
+### Verify No Secrets in Code
+
+Before committing, run:
+
+```bash
+npm run verify:secrets
+```
+
+This scans tracked files for accidental secret commits (API keys, database URLs, etc.) and fails if any are found.
+
+### Environment Variables
+
+- **Never commit `.env` files** - they are gitignored
+- **Use `.env.example`** for documentation only (placeholders only)
+- **Vercel deployment**: Add `DATABASE_URL` and `OPENAI_API_KEY` in Vercel dashboard
+
 ## License
 
 MIT
