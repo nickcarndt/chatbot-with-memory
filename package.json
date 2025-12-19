@@ -12,7 +12,10 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "smoke": "tsx scripts/smoke-runner.ts",
-    "smoke:test": "tsx scripts/smoke.ts"
+    "smoke:test": "tsx scripts/smoke.ts",
+    "vercel:logs": "bash scripts/vercel-logs.sh",
+    "vercel:deployments": "vercel ls",
+    "vercel:inspect": "vercel inspect"
   },
   "dependencies": {
     "next": "^14.2.0",

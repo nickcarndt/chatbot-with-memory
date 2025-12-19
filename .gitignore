@@ -170,3 +170,4 @@ temp/
 .local/
 local/
 *.local
+.vercel
