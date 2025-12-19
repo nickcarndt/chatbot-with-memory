@@ -55,10 +55,6 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# React
-/build
-/dist
-
 # Environment variables
 .env.local
 .env.development.local
@@ -130,17 +126,6 @@ jspm_packages/
 # screenshots/*.png
 # screenshots/*.jpg
 !screenshots/placeholder.txt
-# Google Cloud credentials and secrets
-key.json
-*.json
-!package.json
-!package-lock.json
-!tsconfig.json
-!cloudbuild.yaml
-service-account-*.json
-gcp-credentials.json
-gcp-key.json
-credentials.json
 
 # Security sensitive files
 secrets/

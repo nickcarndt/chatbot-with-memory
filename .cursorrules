@@ -1,0 +1,14 @@
+# Cursor Guardrails — Chatbot with Memory
+
+You MUST follow these rules for any task in this repo:
+
+1) Default to minimal diffs. Delete > add.
+2) Do NOT change UI/UX or functionality unless explicitly requested.
+3) Do NOT add dependencies without explicit user approval.
+4) Do NOT generate automation scripts (Playwright/Satori/fonts/downloads) unless explicitly requested.
+5) Before edits: produce a 5–10 line plan.
+6) After edits: provide a diff summary + commands run.
+7) Always run: npm run typecheck && npm run build && npm run lint before proposing a commit.
+8) If the request is hygiene/docs-only: edit only docs/config; never touch app code.
+9) Never rewrite git history (no force push, no rebase) unless explicitly requested.
+10) Keep README accurate; remove stale references (React/CRA/FastAPI/GCP/Cloud Run/etc.).
