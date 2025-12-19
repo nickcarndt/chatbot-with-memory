@@ -6,8 +6,13 @@ import { z } from 'zod';
 
 export const uuidSchema = z.string().uuid('Invalid UUID format');
 
+export const agentIdSchema = z.enum(['general', 'sales', 'support', 'engineering', 'exec'], {
+  errorMap: () => ({ message: 'agent_id must be one of: general, sales, support, engineering, exec' }),
+});
+
 export const createConversationSchema = z.object({
   title: z.string().max(200, 'Title too long').optional(),
+  agent_id: agentIdSchema.optional().default('general'),
 }).strict();
 
 export const sendMessageSchema = z.object({

@@ -6,6 +6,7 @@ import { conversations, messages } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getChatCompletion, MODEL } from '@/lib/llm';
 import { logInfo, logError } from '@/lib/logger';
+import { getAgentSystemPrompt } from '@/lib/agents';
 
 export const runtime = 'nodejs';
 
@@ -112,16 +113,25 @@ export async function POST(
       .where(eq(messages.conversationId, params.id))
       .orderBy(messages.createdAt);
 
+    // Build messages array with system prompt for agent
+    const agentId = (conversation.agentId as 'general' | 'sales' | 'support' | 'engineering' | 'exec') || 'general';
+    const systemPrompt = getAgentSystemPrompt(agentId);
+    
+    const messagesForLLM = [
+      { role: 'system' as const, content: systemPrompt },
+      ...history.map(msg => ({
+        role: msg.role as 'user' | 'assistant' | 'system',
+        content: msg.content,
+      })),
+    ];
+
     // Generate assistant response with memory
     const startTime = Date.now();
     let assistantContent: string;
 
     try {
       const result = await getChatCompletion(
-        history.map(msg => ({
-          role: msg.role as 'user' | 'assistant' | 'system',
-          content: msg.content,
-        })),
+        messagesForLLM,
         params.id
       );
 

@@ -3,6 +3,7 @@ import { pgTable, uuid, text, timestamp, index } from 'drizzle-orm/pg-core';
 export const conversations = pgTable('conversations', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull().default('New Conversation'),
+  agentId: text('agent_id').notNull().default('general'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   createdAtIdx: index('conversations_created_at_idx').on(table.createdAt),

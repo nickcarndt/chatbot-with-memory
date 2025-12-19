@@ -4,9 +4,10 @@ A full-stack conversational AI application with persistent memory, built with Ne
 
 ## Features
 
-- Real-time chat interface
+- Real-time chat interface with polished UI
 - Persistent conversation history
-- OpenAI GPT-3.5-turbo integration with conversation context
+- Department Agents: Select from 5 specialized agents (General, Sales, Support, Engineering, Executive)
+- OpenAI GPT-3.5-turbo integration with conversation context and agent-specific prompts
 - Structured logging with request ID tracing
 
 ## Tech Stack
@@ -54,6 +55,14 @@ NODE_ENV=development
 npm run db:push
 ```
 
+**Note**: After running `db:push`, if you have existing conversations, you may want to backfill the `agent_id` column:
+
+```bash
+tsx scripts/backfill-agent-id.ts
+```
+
+This sets `agent_id='general'` for any existing conversations (new conversations default to 'general' automatically).
+
 ### 4. Start Development Server
 
 ```bash
@@ -93,7 +102,9 @@ Tests: health check, conversation creation, message memory, cleanup.
    - `OPENAI_API_KEY` (OpenAI API key)
 4. Deploy
 
-**Important**: Run `npm run db:push` once against your production database after deployment.
+**Important**: 
+1. Run `npm run db:push` once against your production database after deployment
+2. If you have existing conversations, run `tsx scripts/backfill-agent-id.ts` to set agent_id for existing data
 
 ## API Endpoints
 

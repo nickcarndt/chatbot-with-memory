@@ -47,7 +47,10 @@ export async function POST(request: NextRequest) {
 
     const [newConversation] = await db
       .insert(conversations)
-      .values({ title: validation.data.title || 'New Conversation' })
+      .values({ 
+        title: validation.data.title || 'New Conversation',
+        agentId: validation.data.agent_id || 'general',
+      })
       .returning();
 
     return NextResponse.json(newConversation, { status: 201 });
