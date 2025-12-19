@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging, getRequestId } from '@/lib/api-helpers';
+import { validateUuid } from '@/lib/validators';
 import { db } from '@/lib/db';
 import { conversations, messages } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { withLogging } from '@/lib/api-helpers';
 
 export const runtime = 'nodejs';
 
@@ -11,15 +12,40 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   return withLogging(request, async () => {
-    const conversation = await db
+    const requestId = getRequestId(request);
+
+    // Validate UUID
+    const uuidValidation = validateUuid(params.id);
+    if (!uuidValidation.valid) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: 'BAD_REQUEST',
+            message: uuidValidation.error,
+            request_id: requestId,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const [conversation] = await db
       .select()
       .from(conversations)
       .where(eq(conversations.id, params.id))
       .limit(1);
 
-    if (conversation.length === 0) {
+    if (!conversation) {
       return NextResponse.json(
-        { error: 'Conversation not found' },
+        {
+          ok: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Conversation not found',
+            request_id: requestId,
+          },
+        },
         { status: 404 }
       );
     }
@@ -31,7 +57,7 @@ export async function GET(
       .orderBy(messages.createdAt);
 
     return NextResponse.json({
-      ...conversation[0],
+      ...conversation,
       messages: convMessages,
     });
   }, 'get_conversation');
@@ -42,6 +68,24 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   return withLogging(request, async () => {
+    const requestId = getRequestId(request);
+
+    // Validate UUID
+    const uuidValidation = validateUuid(params.id);
+    if (!uuidValidation.valid) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: 'BAD_REQUEST',
+            message: uuidValidation.error,
+            request_id: requestId,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     const [deleted] = await db
       .delete(conversations)
       .where(eq(conversations.id, params.id))
@@ -49,7 +93,14 @@ export async function DELETE(
 
     if (!deleted) {
       return NextResponse.json(
-        { error: 'Conversation not found' },
+        {
+          ok: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Conversation not found',
+            request_id: requestId,
+          },
+        },
         { status: 404 }
       );
     }

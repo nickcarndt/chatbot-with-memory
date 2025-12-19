@@ -1,20 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging, parseBody, getRequestId } from '@/lib/api-helpers';
+import { createConversationSchema } from '@/lib/validators';
 import { db } from '@/lib/db';
-import { conversations } from '@/lib/db/schema';
+import { conversations, messages } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
-import { withLogging, getRequestId } from '@/lib/api-helpers';
-import { messages } from '@/lib/db/schema';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   return withLogging(request, async () => {
-    const body = await request.json();
-    const title = body.title || 'New Conversation';
+    const requestId = getRequestId(request);
+
+    // Parse and validate body
+    let body: unknown;
+    try {
+      body = await parseBody(request);
+    } catch (error) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: 'BAD_REQUEST',
+            message: error instanceof Error ? error.message : 'Invalid request body',
+            request_id: requestId,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate schema
+    const validation = createConversationSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: 'BAD_REQUEST',
+            message: validation.error.errors[0]?.message || 'Invalid request',
+            request_id: requestId,
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     const [newConversation] = await db
       .insert(conversations)
-      .values({ title })
+      .values({ title: validation.data.title || 'New Conversation' })
       .returning();
 
     return NextResponse.json(newConversation, { status: 201 });
@@ -28,7 +61,6 @@ export async function GET(request: NextRequest) {
       .from(conversations)
       .orderBy(desc(conversations.createdAt));
 
-    // Fetch messages for each conversation
     const conversationsWithMessages = await Promise.all(
       allConversations.map(async (conv) => {
         const convMessages = await db

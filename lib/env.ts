@@ -31,15 +31,22 @@ export function getEnv(): Env {
   }
 }
 
-// Validate on import in server-side code
-if (typeof window === 'undefined') {
+// Validate on import in server-side code (skip during build)
+// Next.js builds don't have env vars, validation happens at runtime
+if (typeof window === 'undefined' && !process.env.NEXT_PHASE) {
   try {
     getEnv();
   } catch (error) {
-    // Only throw in non-test environments
+    // Only throw in non-test environments at runtime
     if (process.env.NODE_ENV !== 'test') {
-      console.error('Environment validation failed:', error instanceof Error ? error.message : String(error));
-      process.exit(1);
+      // Don't exit during build - env vars are set at runtime on Vercel
+      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+        // In production, log but don't exit (env vars set at runtime)
+        console.warn('Environment validation failed (will retry at runtime):', error instanceof Error ? error.message : String(error));
+      } else {
+        console.error('Environment validation failed:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+      }
     }
   }
 }

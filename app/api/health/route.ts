@@ -1,13 +1,15 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
 import { withLogging, getRequestId } from '@/lib/api-helpers';
-import { NextRequest } from 'next/server';
 import { getEnv } from '@/lib/env';
+import { db } from '@/lib/db';
+import { conversations } from '@/lib/db/schema';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   return withLogging(request, async () => {
+    const requestId = getRequestId(request);
+
     // Validate environment
     try {
       getEnv();
@@ -17,6 +19,7 @@ export async function GET(request: NextRequest) {
           ok: false,
           db: false,
           error: 'Environment validation failed',
+          request_id: requestId,
         },
         { status: 503 }
       );
@@ -25,7 +28,8 @@ export async function GET(request: NextRequest) {
     // Test database connection
     let dbOk = false;
     try {
-      await db.execute({ sql: 'SELECT 1', args: [] });
+      // Simple query to test connection
+      await db.select().from(conversations).limit(0);
       dbOk = true;
     } catch (error) {
       dbOk = false;
@@ -34,7 +38,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       db: dbOk,
-      request_id: getRequestId(request),
+      request_id: requestId,
     });
   }, 'health_check');
 }

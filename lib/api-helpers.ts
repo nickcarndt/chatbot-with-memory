@@ -1,10 +1,39 @@
+/**
+ * API helper functions for request handling and logging
+ */
+
 import { NextRequest } from 'next/server';
 import { logInfo, logError } from './logger';
+import { MAX_BODY_SIZE } from './validators';
 
 export function getRequestId(request: NextRequest): string {
   return request.headers.get('X-Request-ID') || 'unknown';
 }
 
+/**
+ * Parse and validate request body size
+ */
+export async function parseBody<T>(request: NextRequest): Promise<T> {
+  const contentLength = request.headers.get('content-length');
+  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+    throw new Error('Request body too large');
+  }
+
+  const text = await request.text();
+  if (text.length > MAX_BODY_SIZE) {
+    throw new Error('Request body too large');
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch (error) {
+    throw new Error('Invalid JSON');
+  }
+}
+
+/**
+ * Log request start/end with timing
+ */
 export async function withLogging<T>(
   request: NextRequest,
   handler: () => Promise<T>,
@@ -36,16 +65,13 @@ export async function withLogging<T>(
     return result;
   } catch (error) {
     const durationMs = Date.now() - startTime;
-    const errorType = error instanceof Error ? error.constructor.name : 'UnknownError';
-    const errorMessage = error instanceof Error ? error.message : String(error);
 
     logError(`${eventName}_failed`, {
       request_id: requestId,
       method,
       path,
       duration_ms: durationMs,
-      error_type: errorType,
-      error_message: errorMessage,
+      error: error instanceof Error ? error : new Error(String(error)),
     });
 
     throw error;

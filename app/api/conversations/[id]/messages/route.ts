@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging, parseBody, getRequestId } from '@/lib/api-helpers';
+import { validateUuid, sendMessageSchema } from '@/lib/validators';
 import { db } from '@/lib/db';
 import { conversations, messages } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { withLogging, getRequestId } from '@/lib/api-helpers';
-import { getChatCompletion } from '@/lib/llm';
+import { getChatCompletion, MODEL } from '@/lib/llm';
 import { logInfo, logError } from '@/lib/logger';
 
 export const runtime = 'nodejs';
@@ -14,15 +15,58 @@ export async function POST(
 ) {
   return withLogging(request, async () => {
     const requestId = getRequestId(request);
-    const body = await request.json();
-    const { role, content } = body;
 
-    if (!role || !content) {
+    // Validate UUID
+    const uuidValidation = validateUuid(params.id);
+    if (!uuidValidation.valid) {
       return NextResponse.json(
-        { error: 'role and content are required' },
+        {
+          ok: false,
+          error: {
+            code: 'BAD_REQUEST',
+            message: uuidValidation.error,
+            request_id: requestId,
+          },
+        },
         { status: 400 }
       );
     }
+
+    // Parse and validate body
+    let body: unknown;
+    try {
+      body = await parseBody(request);
+    } catch (error) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: 'BAD_REQUEST',
+            message: error instanceof Error ? error.message : 'Invalid request body',
+            request_id: requestId,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate schema
+    const validation = sendMessageSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: 'BAD_REQUEST',
+            message: validation.error.errors[0]?.message || 'Invalid request',
+            request_id: requestId,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const { role, content } = validation.data;
 
     // Verify conversation exists
     const [conversation] = await db
@@ -33,20 +77,24 @@ export async function POST(
 
     if (!conversation) {
       return NextResponse.json(
-        { error: 'Conversation not found' },
+        {
+          ok: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Conversation not found',
+            request_id: requestId,
+          },
+        },
         { status: 404 }
       );
     }
 
     // Save user message
-    const [userMessage] = await db
-      .insert(messages)
-      .values({
-        conversationId: params.id,
-        role,
-        content,
-      })
-      .returning();
+    await db.insert(messages).values({
+      conversationId: params.id,
+      role,
+      content,
+    });
 
     // Update conversation title if it's the first user message
     if (conversation.title === 'New Conversation' && role === 'user') {
@@ -67,10 +115,9 @@ export async function POST(
     // Generate assistant response with memory
     const startTime = Date.now();
     let assistantContent: string;
-    let errorType: string | undefined;
 
     try {
-      assistantContent = await getChatCompletion(
+      const result = await getChatCompletion(
         history.map(msg => ({
           role: msg.role as 'user' | 'assistant' | 'system',
           content: msg.content,
@@ -78,25 +125,26 @@ export async function POST(
         params.id
       );
 
+      assistantContent = result.content;
+
       const durationMs = Date.now() - startTime;
       logInfo('openai_request_success', {
         request_id: requestId,
         conversation_id: params.id,
-        model: 'gpt-3.5-turbo',
+        model: MODEL,
         duration_ms: durationMs,
         message_count: history.length,
       });
     } catch (error) {
       const durationMs = Date.now() - startTime;
-      errorType = error instanceof Error ? error.constructor.name : 'UnknownError';
       assistantContent = "I apologize, but I'm having trouble connecting to my AI service right now. Please try again later.";
 
       logError('openai_request_failed', {
         request_id: requestId,
         conversation_id: params.id,
-        model: 'gpt-3.5-turbo',
+        model: MODEL,
         duration_ms: durationMs,
-        error_type: errorType,
+        error: error instanceof Error ? error : new Error(String(error)),
         message_count: history.length,
       });
     }

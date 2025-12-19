@@ -7,15 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "smoke": "tsx scripts/smoke-runner.ts",
-    "smoke:test": "tsx scripts/smoke.ts",
-    "vercel:logs": "bash scripts/vercel-logs.sh",
-    "vercel:deployments": "vercel ls",
-    "vercel:inspect": "vercel inspect"
+    "smoke:test": "tsx scripts/smoke.ts"
   },
   "dependencies": {
     "next": "^14.2.0",

@@ -39,6 +39,11 @@ export default function Home() {
   const loadConversations = async () => {
     try {
       const response = await fetch('/api/conversations');
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Error loading conversations:', error);
+        return;
+      }
       const data = await response.json();
       setConversations(data);
     } catch (error) {
@@ -53,18 +58,29 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
+      if (!response.ok) {
+        const error = await response.json();
+        alert(`Error: ${error.error?.message || 'Failed to create conversation'}\nRequest ID: ${error.error?.request_id || 'unknown'}`);
+        return;
+      }
       const newConv = await response.json();
       setConversations(prev => [newConv, ...prev]);
       setCurrentConversation({ ...newConv, messages: [] });
       setMessages([]);
     } catch (error) {
       console.error('Error creating conversation:', error);
+      alert('Network error. Please try again.');
     }
   };
 
   const selectConversation = async (conv: Conversation) => {
     try {
       const response = await fetch(`/api/conversations/${conv.id}`);
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Error loading conversation:', error);
+        return;
+      }
       const data = await response.json();
       setCurrentConversation(data);
     } catch (error) {
@@ -96,19 +112,29 @@ export default function Home() {
         }),
       });
 
+      if (!response.ok) {
+        const error = await response.json();
+        setMessages(prev => prev.slice(0, -1));
+        alert(`Error: ${error.error?.message || 'Failed to send message'}\nRequest ID: ${error.error?.request_id || 'unknown'}`);
+        return;
+      }
+
       const assistantMessage = await response.json();
       setMessages(prev => [...prev, assistantMessage]);
 
       // Refresh conversation to get updated title
       const convResponse = await fetch(`/api/conversations/${currentConversation.id}`);
-      const updatedConv = await convResponse.json();
-      setCurrentConversation(updatedConv);
-      setConversations(prev =>
-        prev.map(c => (c.id === currentConversation.id ? updatedConv : c))
-      );
+      if (convResponse.ok) {
+        const updatedConv = await convResponse.json();
+        setCurrentConversation(updatedConv);
+        setConversations(prev =>
+          prev.map(c => (c.id === currentConversation.id ? updatedConv : c))
+        );
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => prev.slice(0, -1));
+      alert('Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +142,12 @@ export default function Home() {
 
   const deleteConversation = async (id: string) => {
     try {
-      await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Error deleting conversation:', error);
+        return;
+      }
       setConversations(prev => prev.filter(c => c.id !== id));
       if (currentConversation?.id === id) {
         setCurrentConversation(null);
@@ -130,12 +161,18 @@ export default function Home() {
   const clearAllConversations = async () => {
     if (!confirm('Are you sure you want to clear all conversations?')) return;
     try {
-      await fetch('/api/conversations', { method: 'DELETE' });
+      const response = await fetch('/api/conversations', { method: 'DELETE' });
+      if (!response.ok) {
+        const error = await response.json();
+        alert(`Error: ${error.error?.message || 'Failed to clear conversations'}\nRequest ID: ${error.error?.request_id || 'unknown'}`);
+        return;
+      }
       setConversations([]);
       setCurrentConversation(null);
       setMessages([]);
     } catch (error) {
       console.error('Error clearing conversations:', error);
+      alert('Network error. Please try again.');
     }
   };
 
