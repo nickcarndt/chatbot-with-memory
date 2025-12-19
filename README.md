@@ -2,11 +2,14 @@
 
 A production-ready conversational AI application with persistent memory, department agents, and request tracing. Built for applied AI systems that require observability, prompt routing, and post-hoc analysis.
 
-![Demo](public/demo.png)
+![Demo](screenshots/demo.png)
 
 ## Screenshots
 
-Add `public/demo.png`: screenshot of app with sidebar, agent selector, chat with markdown-rendered messages, and Inspector drawer open showing metadata (duration, request ID, model, tokens). Add `public/og.png`: 1200×630 social preview image.
+- **Main Interface**: Sidebar with agent selector, chat with markdown-rendered messages, Inspector drawer showing metadata
+- **Inspector Panel**: Request ID, duration, model, and token usage details
+- **Agent Selection**: Department agents (General, Sales, Support, Engineering, Executive)
+- **Message Thread**: Conversation history with persistent memory
 
 ## Quickstart
 
