@@ -3,18 +3,37 @@
 Full-stack AI chatbot with persistent conversations, department-routed system prompts, and an Inspector for request-level debugging. Built for applied AI systems that require observability, prompt routing, and post-hoc analysis.
 
 <p align="center">
-  <img src="screenshots/demo.png" width="1000" alt="Chatbot with Memory — Agents + Inspector" />
+  <img src="screenshots/demo.png" width="920" alt="Chatbot with Memory — Agents + Inspector" />
+  <br/>
+  <sub><b>Main interface</b> — department agents + persistent conversations + Inspector drawer.</sub>
 </p>
 
-<p align="center">
-  <img src="screenshots/agents.png" width="330" alt="Department agent selector" />
-  <img src="screenshots/inspector.png" width="330" alt="Inspector drawer with request metadata" />
-  <img src="screenshots/markdown.png" width="330" alt="Markdown rendering (lists + code blocks)" />
-</p>
-
-<p align="center">
-  <img src="screenshots/search-filter.png" width="1000" alt="Search + agent filters" />
-</p>
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="screenshots/agents.png" width="420" alt="Department agent selector" />
+      <br/>
+      <sub><b>Agents</b> — route system prompts by department (Sales/Support/Engineering/Exec).</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="screenshots/inspector.png" width="420" alt="Inspector drawer with request metadata" />
+      <br/>
+      <sub><b>Inspector</b> — request_id + latency + model + token usage for each response.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="screenshots/markdown.png" width="420" alt="Markdown rendering (lists + code blocks)" />
+      <br/>
+      <sub><b>Markdown</b> — clean GFM rendering with sanitization (lists, tables, code).</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="screenshots/search-filter.png" width="420" alt="Search + agent filters" />
+      <br/>
+      <sub><b>Search & Filters</b> — fast client-side search + agent filter chips.</sub>
+    </td>
+  </tr>
+</table>
 
 ## Why This Matters
 
