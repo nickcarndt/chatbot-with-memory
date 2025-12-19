@@ -1,46 +1,30 @@
 # Chatbot with Memory
 
-A production-ready conversational AI application with persistent memory, built with Next.js, TypeScript, and Neon PostgreSQL.
+A production-ready conversational AI application with persistent memory, department agents, and request tracing. Built for applied AI systems that require observability, prompt routing, and post-hoc analysis.
 
 ![Demo](public/demo.png)
 
 ## Quickstart
 
-### 1. Environment Setup
-
 ```bash
 cp .env.example .env
-```
+# Edit .env with DATABASE_URL and OPENAI_API_KEY
 
-Edit `.env`:
-```env
-DATABASE_URL=REDACTEDser:password@host.neon.tech/dbname?sslmode=require
-OPENAI_API_KEY=REDACTED
-NODE_ENV=development
-```
-
-### 2. Database Setup
-
-```bash
 npm install
 npm run db:push
-```
-
-### 3. Run Development Server
-
-```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
 
-## Features
+## Demo Walkthrough (90 seconds)
 
-- **Department Agents**: 5 specialized agents (General, Sales, Support, Engineering, Executive) with custom system prompts
-- **Inspector**: Debug panel showing request metadata (duration, request ID, model, token usage)
-- **Request ID Tracing**: Every API request includes `X-Request-ID` header for log correlation
-- **Persistent Memory**: Conversation history and message metadata stored in PostgreSQL
-- **Enterprise UI**: Clean, modern interface with command palette (Cmd+K), search, and filters
+1. Select a department agent (e.g., "Engineering") → Click "New Chat"
+2. Send a message (e.g., "Explain tradeoffs of SSE vs WebSockets")
+3. Click ⓘ icon on assistant response to open Inspector drawer
+4. View metadata: duration, request ID, model, token usage
+5. Correlate with Vercel logs using `request_id` from Inspector
+6. Switch agents to see different system prompts and response styles
 
 ## Why This Matters
 
@@ -48,62 +32,47 @@ Open [http://localhost:3000](http://localhost:3000)
 
 **Inspector** → Debuggability + request_id correlation. Every assistant response includes metadata (duration, model, tokens) that can be traced back to Vercel logs via `request_id` for production debugging.
 
-**Metadata Persistence** → Post-hoc analysis, cost + latency visibility. All message metadata is stored in PostgreSQL, enabling analysis of token usage, response times, and model performance over time.
+**Postgres Persistence** → Auditability + post-hoc analysis. All message metadata is stored in PostgreSQL, enabling analysis of token usage, response times, and model performance over time.
 
-## 90-Second Demo Script
+## Architecture
 
-1. Select agent (e.g., "Engineering") → Click "New Chat"
-2. Ask a question (e.g., "Explain React hooks")
-3. Click ⓘ icon on assistant response to open Inspector
-4. View metadata: duration, request ID, model, token usage
-5. Correlate with Vercel logs using `request_id` from Inspector
+```mermaid
+flowchart LR
+  U[User / Browser] -->|HTTPS| UI
 
-## Operations
+  subgraph UI[Next.js App (Vercel)]
+    direction LR
+    C[Client UI<br/>(Chat + Sidebar + Inspector)] --> API[App Router API Routes<br/>(Serverless / Node.js)]
+    MW[Middleware<br/>Request ID] --> API
+    API --> LOGS[Structured Logs<br/>(Vercel Logs)]
+  end
 
-### Vercel Deployment
+  subgraph APIROUTES[API Surface]
+    direction TB
+    H[/GET /api/health/]
+    L[/GET|POST|DELETE /api/conversations/]
+    M[/POST /api/conversations/:id/messages/]
+  end
 
-1. Push to GitHub
-2. Import repository in Vercel
-3. Add environment variables:
-   - `DATABASE_URL` (Neon connection string)
-   - `OPENAI_API_KEY` (OpenAI API key)
-4. Deploy
+  API --> APIROUTES
+  APIROUTES --> DB[(Neon Postgres<br/>Drizzle ORM)]
+  M --> LLM[OpenAI API]
+```
 
-### Database Migrations
+**Tech Stack**: Vercel (deployment), Next.js App Router (framework), Neon Postgres (database), Drizzle ORM (queries), OpenAI API (LLM), JSON logs + request_id (observability)
 
-After deployment, apply schema changes to production:
+## Operational Notes
 
+**Vercel Logs**: Dashboard → Project → Logs. Search by `request_id` from `X-Request-ID` header for request correlation.
+
+**Schema Changes**: After deployment, apply to production:
 ```bash
 vercel env pull .env.production.local --environment=production
 export $(grep "^DATABASE_URL=" .env.production.local | xargs)
 npm run db:push
 ```
 
-### Logs
-
-- **Vercel Logs**: Dashboard → Project → Logs
-- **Request Tracing**: Search by `request_id` from `X-Request-ID` header
-- **Structured Logs**: JSON format with `request_id`, `method`, `path`, `status`, `duration_ms`
-
-## Development
-
-```bash
-npm run typecheck  # TypeScript validation
-npm run lint       # ESLint
-npm run build      # Production build
-npm run smoke      # End-to-end smoke tests
-```
-
-### Commit Style
-
-Follow conventional commits:
-- `feat(ui):` - UI features
-- `fix(ui):` - UI bug fixes
-- `chore(ui):` - UI maintenance
-- `feat:` - Backend/API features
-- `fix:` - Backend/API bug fixes
-- `docs:` - Documentation changes
-- `chore:` - Maintenance tasks
+**Request Tracing**: All API responses include `X-Request-ID` header. Structured logs include `request_id`, `method`, `path`, `status`, `duration_ms`.
 
 ## API
 
@@ -115,23 +84,15 @@ Follow conventional commits:
 - `DELETE /api/conversations/:id` - Delete conversation
 - `DELETE /api/conversations` - Clear all conversations
 
-All responses include `X-Request-ID` header.
-
-## Security
+## Development
 
 ```bash
+npm run typecheck  # TypeScript validation
+npm run lint       # ESLint
+npm run build      # Production build
+npm run smoke      # End-to-end smoke tests
 npm run verify:secrets  # Scan for accidental secret commits
 ```
-
-Never commit `.env` files. Use `.env.example` for documentation only.
-
-## Tech Stack
-
-- **Framework**: Next.js 14.2+ (App Router, TypeScript)
-- **Database**: Neon PostgreSQL with Drizzle ORM
-- **AI**: OpenAI GPT-3.5-turbo
-- **Styling**: Tailwind CSS
-- **Deployment**: Vercel
 
 ## License
 
