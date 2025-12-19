@@ -4,6 +4,10 @@ A production-ready conversational AI application with persistent memory, departm
 
 ![Demo](public/demo.png)
 
+## Screenshots
+
+The demo screenshot (`public/demo.png`) should show: sidebar with agent selector and filters, a conversation with markdown-rendered assistant messages, and the Inspector drawer open displaying real metadata (duration, request ID, model, token usage).
+
 ## Quickstart
 
 ```bash
