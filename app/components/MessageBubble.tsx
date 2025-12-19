@@ -1,5 +1,7 @@
 'use client';
 
+import { Markdown } from './Markdown';
+
 interface MessageBubbleProps {
   role: 'user' | 'assistant';
   content: string;
@@ -30,7 +32,9 @@ export function MessageBubble({ role, content, messageId, isSelected, onSelect }
         }`}
       >
         <div className="px-4 py-3">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-900">{content}</p>
+          <div className="text-sm text-slate-900">
+            <Markdown>{content}</Markdown>
+          </div>
         </div>
         <div className="px-4 pb-2 flex items-center justify-end">
           <button
