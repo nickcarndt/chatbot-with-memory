@@ -25,11 +25,19 @@ export interface ChatCompletionResult {
   };
 }
 
-const env = getEnv();
-const client = new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
-  timeout: DEFAULT_TIMEOUT_MS,
-});
+// Lazy initialization - only call getEnv() when client is actually used (at runtime, not during build)
+let _client: OpenAI | null = null;
+
+function getClient(): OpenAI {
+  if (!_client) {
+    const env = getEnv();
+    _client = new OpenAI({
+      apiKey: env.OPENAI_API_KEY,
+      timeout: DEFAULT_TIMEOUT_MS,
+    });
+  }
+  return _client;
+}
 
 const isSmokeTest = process.env.SMOKE_TEST === 'true';
 
@@ -42,7 +50,7 @@ export async function getChatCompletion(
   const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
 
   try {
-    const response = await client.chat.completions.create(
+      const response = await getClient().chat.completions.create(
       {
         model: MODEL,
         messages: messages.map(msg => ({
