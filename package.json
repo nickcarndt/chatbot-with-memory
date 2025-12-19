@@ -14,7 +14,8 @@
     "db:studio": "drizzle-kit studio",
     "smoke": "tsx scripts/smoke-runner.ts",
     "smoke:test": "tsx scripts/smoke.ts",
-    "verify:secrets": "tsx scripts/verify-secrets.ts"
+    "verify:secrets": "tsx scripts/verify-secrets.ts",
+    "assets:generate": "tsx scripts/generate-assets.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
@@ -32,6 +33,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
@@ -39,7 +41,9 @@
     "autoprefixer": "^10.4.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
+    "playwright": "^1.48.2",
     "postcss": "^8.4.0",
+    "satori": "^0.15.0",
     "tailwindcss": "^3.4.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.0"
