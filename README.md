@@ -6,10 +6,21 @@ A production-ready conversational AI application with persistent memory, departm
 
 ## Screenshots
 
-- **Main Interface**: Sidebar with agent selector, chat with markdown-rendered messages, Inspector drawer showing metadata
-- **Inspector Panel**: Request ID, duration, model, and token usage details
-- **Agent Selection**: Department agents (General, Sales, Support, Engineering, Executive)
-- **Message Thread**: Conversation history with persistent memory
+![Main Interface](screenshots/demo.png)
+
+**Key Features:**
+
+- **Department Agents**: Select specialized agents for different roles
+  ![Agent Selection](screenshots/agents.png)
+
+- **Markdown Rendering**: Assistant messages render lists, code blocks, and formatting
+  ![Markdown](screenshots/markdown.png)
+
+- **Inspector Panel**: Debug metadata including request ID, duration, model, and token usage
+  ![Inspector](screenshots/inspector.png)
+
+- **Search & Filters**: Find conversations quickly with search and agent filters
+  ![Search & Filter](screenshots/search-filter.png)
 
 ## Quickstart
 
