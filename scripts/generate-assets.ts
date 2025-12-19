@@ -12,8 +12,9 @@
 import { chromium } from 'playwright';
 import { spawn, ChildProcess } from 'child_process';
 import { promisify } from 'util';
-import { writeFile } from 'fs/promises';
+import { writeFile, readFile, mkdir } from 'fs/promises';
 import { join } from 'path';
+import { existsSync } from 'fs';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 
@@ -181,10 +182,67 @@ Format your response with proper markdown.`;
 async function generateOGPNG(): Promise<void> {
   console.log('Generating og.png...');
 
-  // Use system font - Satori will fallback gracefully
+  // Try to load cached font first
+  const fontCachePath = join(process.cwd(), '.font-cache', 'inter-regular.ttf');
+  let fontData: Buffer | null = null;
+
+  if (existsSync(fontCachePath)) {
+    try {
+      fontData = await readFile(fontCachePath);
+      console.log('Using cached font');
+    } catch (error) {
+      console.log('Failed to read cached font, fetching...');
+    }
+  }
+
+  // If no cache, try to fetch from CDN
+  if (!fontData || fontData.length < 100) {
+    const fontUrls = [
+      'https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Regular.ttf',
+      'https://raw.githubusercontent.com/rsms/inter/master/docs/font-files/Inter-Regular.ttf',
+    ];
+    
+    let lastError: Error | null = null;
+    
+    for (const fontUrl of fontUrls) {
+      try {
+        console.log(`Trying font URL: ${fontUrl.substring(0, 60)}...`);
+        const fontResponse = await fetch(fontUrl, {
+          headers: {
+            'Accept': 'application/octet-stream',
+          },
+        });
+        if (fontResponse.ok) {
+          const arrayBuffer = await fontResponse.arrayBuffer();
+          fontData = Buffer.from(arrayBuffer);
+          if (fontData.length > 1000) { // Valid TTF should be > 1KB
+            console.log(`Successfully loaded font (${fontData.length} bytes)`);
+            // Cache it for next time
+            try {
+              await mkdir(join(process.cwd(), '.font-cache'), { recursive: true });
+              await writeFile(fontCachePath, fontData);
+            } catch (cacheError) {
+              // Ignore cache errors
+            }
+            break;
+          }
+        }
+      } catch (error) {
+        lastError = error as Error;
+        continue;
+      }
+    }
+    
+    if (!fontData || fontData.length < 1000) {
+      throw new Error(`Failed to load font. Please ensure network access. Last error: ${lastError?.message || 'Unknown'}`);
+    }
+  }
+
+  // Note: WOFF2 fonts need conversion, but let's try TTF first
+  // If fontData is WOFF2, Satori will fail - we'll handle that
   const font = {
-    name: 'system-ui',
-    data: Buffer.from(''),
+    name: 'Inter',
+    data: fontData,
     weight: 400 as const,
     style: 'normal' as const,
   };
