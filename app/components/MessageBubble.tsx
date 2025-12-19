@@ -25,7 +25,7 @@ export function MessageBubble({ role, content, messageId, isSelected, onSelect }
         onClick={onSelect}
         className={`max-w-[72ch] rounded-lg bg-white border shadow-sm cursor-pointer transition-all ${
           isSelected
-            ? 'border-blue-500 ring-2 ring-blue-200'
+            ? 'border-blue-400 ring-2 ring-blue-200'
             : 'border-slate-200 hover:border-slate-300'
         }`}
       >

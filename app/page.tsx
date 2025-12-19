@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { AGENT_IDS, AGENT_NAMES, type AgentId } from '@/lib/agents';
 import { Sidebar } from './components/Sidebar';
 import { ChatHeader } from './components/ChatHeader';
-import { EvalModePanel } from './components/EvalModePanel';
 import { MessageBubble } from './components/MessageBubble';
 import { InspectorPanel } from './components/InspectorPanel';
 import { Composer, type ComposerRef } from './components/Composer';
@@ -265,12 +264,6 @@ export default function Home() {
               evalMode={evalMode}
               onEvalModeToggle={() => setEvalMode(prev => !prev)}
             />
-            {evalMode && (
-              <EvalModePanel
-                agentId={currentConversation.agentId}
-                messageCount={messages.length}
-              />
-            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-slate-50">
@@ -301,15 +294,18 @@ export default function Home() {
         )}
       </div>
 
-      {/* Inspector Panel */}
+      {/* Inspector Drawer */}
       {currentConversation && (
         <InspectorPanel
+          isOpen={evalMode}
           selectedMessage={
             selectedMessageId
               ? messages.find(m => m.id === selectedMessageId) || null
               : null
           }
-          onClose={() => setSelectedMessageId(null)}
+          conversationAgentId={currentConversation.agentId}
+          messageCount={messages.length}
+          onClose={() => setEvalMode(false)}
         />
       )}
 
