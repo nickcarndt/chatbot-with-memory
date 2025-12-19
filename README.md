@@ -2,6 +2,8 @@
 
 A production-ready conversational AI application with persistent memory, built with Next.js, TypeScript, and Neon PostgreSQL.
 
+![Demo](public/demo.png)
+
 ## Quickstart
 
 ### 1. Environment Setup
@@ -40,6 +42,14 @@ Open [http://localhost:3000](http://localhost:3000)
 - **Persistent Memory**: Conversation history and message metadata stored in PostgreSQL
 - **Enterprise UI**: Clean, modern interface with command palette (Cmd+K), search, and filters
 
+## 90-Second Demo Script
+
+1. Select agent (e.g., "Engineering") → Click "New Chat"
+2. Ask a question (e.g., "Explain React hooks")
+3. Click ⓘ icon on assistant response to open Inspector
+4. View metadata: duration, request ID, model, token usage
+5. Correlate with Vercel logs using `request_id` from Inspector
+
 ## Operations
 
 ### Vercel Deployment
@@ -75,6 +85,17 @@ npm run lint       # ESLint
 npm run build      # Production build
 npm run smoke      # End-to-end smoke tests
 ```
+
+### Commit Style
+
+Follow conventional commits:
+- `feat(ui):` - UI features
+- `fix(ui):` - UI bug fixes
+- `chore(ui):` - UI maintenance
+- `feat:` - Backend/API features
+- `fix:` - Backend/API bug fixes
+- `docs:` - Documentation changes
+- `chore:` - Maintenance tasks
 
 ## API
 
