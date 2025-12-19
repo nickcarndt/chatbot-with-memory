@@ -6,7 +6,7 @@ A production-ready conversational AI application with persistent memory, departm
 
 ## Screenshots
 
-The demo screenshot (`public/demo.png`) should show: sidebar with agent selector and filters, a conversation with markdown-rendered assistant messages, and the Inspector drawer open displaying real metadata (duration, request ID, model, token usage).
+Add `public/demo.png`: screenshot of app with sidebar, agent selector, chat with markdown-rendered messages, and Inspector drawer open showing metadata (duration, request ID, model, tokens). Add `public/og.png`: 1200×630 social preview image.
 
 ## Quickstart
 
