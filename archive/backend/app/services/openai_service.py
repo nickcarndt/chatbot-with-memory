@@ -1,7 +1,9 @@
 import os
-from typing import List
+import time
+from typing import List, Optional
 from openai import OpenAI
 from dotenv import load_dotenv
+from ..core.logging_config import get_logger
 
 # Load environment variables
 load_dotenv()
@@ -15,17 +17,43 @@ if OPENAI_API_KEY:
 else:
     client = None
 
+logger = get_logger(__name__)
 
-def get_chat_completion(messages: List[dict], conversation_id: int = None) -> str:
+
+def get_chat_completion(
+    messages: List[dict], 
+    conversation_id: Optional[int] = None,
+    request_id: Optional[str] = None
+) -> str:
+    """
+    Get chat completion from OpenAI with observability logging.
+    
+    Args:
+        messages: List of message dicts with role and content
+        conversation_id: Optional conversation ID for personality selection
+        request_id: Optional request ID for tracing
+        
+    Returns:
+        Assistant response content
+    """
     if not OPENAI_API_KEY:
-        print(f"DEBUG: OPENAI_API_KEY is not set. Environment variables: {dict(os.environ)}")
+        logger.error(
+            "openai_api_key_missing",
+            request_id=request_id,
+            conversation_id=conversation_id,
+        )
         raise RuntimeError("OPENAI_API_KEY is not set")
     
     if not client:
-        print(f"DEBUG: OpenAI client is not initialized")
+        logger.error(
+            "openai_client_not_initialized",
+            request_id=request_id,
+            conversation_id=conversation_id,
+        )
         raise RuntimeError("OpenAI client is not initialized")
     
-    print(f"DEBUG: OpenAI API key found, length: {len(OPENAI_API_KEY) if OPENAI_API_KEY else 0}")
+    model = "gpt-3.5-turbo"
+    start_time = time.time()
     
     # Add conversation context and variety
     system_messages = [
@@ -51,15 +79,43 @@ def get_chat_completion(messages: List[dict], conversation_id: int = None) -> st
     
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=model,
             messages=enhanced_messages,
             temperature=0.8,  # Increased for more variety
             max_tokens=1000,  # Limit response length
             presence_penalty=0.6,  # Encourage new topics
             frequency_penalty=0.3,  # Reduce repetition
         )
+        
+        duration_ms = (time.time() - start_time) * 1000
+        
+        # Log successful OpenAI call (NO content or secrets)
+        logger.info(
+            "openai_request_success",
+            request_id=request_id,
+            conversation_id=conversation_id,
+            model=model,
+            duration_ms=round(duration_ms, 2),
+            message_count=len(messages),
+        )
+        
         return response.choices[0].message.content
+        
     except Exception as e:
+        duration_ms = (time.time() - start_time) * 1000
+        error_type = type(e).__name__
+        
+        # Log failed OpenAI call (NO content or secrets)
+        logger.error(
+            "openai_request_failed",
+            request_id=request_id,
+            conversation_id=conversation_id,
+            model=model,
+            duration_ms=round(duration_ms, 2),
+            error_type=error_type,
+            message_count=len(messages),
+        )
+        
         # Return a fallback message if OpenAI API fails
         return f"I apologize, but I'm having trouble connecting to my AI service right now. Error: {str(e)}"
 

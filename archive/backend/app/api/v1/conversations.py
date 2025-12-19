@@ -98,7 +98,8 @@ def add_message_and_respond_endpoint(
         
         # Get assistant response
         try:
-            assistant_content = get_chat_completion(history, conversation_id)
+            request_id = getattr(request.state, "request_id", None)
+            assistant_content = get_chat_completion(history, conversation_id, request_id=request_id)
         except Exception as e:
             # If OpenAI fails, return a fallback message
             assistant_content = f"I apologize, but I'm having trouble connecting to my AI service right now. Please try again later."
