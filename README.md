@@ -1,56 +1,46 @@
 # Chatbot with Memory
 
-A production-ready conversational AI application with persistent memory, department agents, and request tracing. Built for applied AI systems that require observability, prompt routing, and post-hoc analysis.
+Full-stack AI chatbot with persistent conversations, department-routed system prompts, and an Inspector for request-level debugging. Built for applied AI systems that require observability, prompt routing, and post-hoc analysis.
 
-![Demo](screenshots/demo.png)
+<p align="center">
+  <img src="screenshots/demo.png" width="1000" alt="Chatbot with Memory — Agents + Inspector" />
+</p>
 
-## Screenshots
+<p align="center">
+  <img src="screenshots/agents.png" width="330" alt="Department agent selector" />
+  <img src="screenshots/inspector.png" width="330" alt="Inspector drawer with request metadata" />
+  <img src="screenshots/markdown.png" width="330" alt="Markdown rendering (lists + code blocks)" />
+</p>
 
-![Main Interface](screenshots/demo.png)
+<p align="center">
+  <img src="screenshots/search-filter.png" width="1000" alt="Search + agent filters" />
+</p>
 
-**Key Features:**
+## Why This Matters
 
-- **Department Agents**: Select specialized agents for different roles
-  ![Agent Selection](screenshots/agents.png)
+- **Department Agents** → Prompt routing per org role. Each conversation uses a specialized system prompt (sales discovery, support troubleshooting, engineering tradeoffs).
+- **Inspector** → Debuggability + request tracing. Every assistant response includes metadata (duration, model, tokens) correlated to server logs via `request_id`.
+- **Persisted Metadata** → Post-hoc latency/cost visibility. All message metadata stored in PostgreSQL enables analysis of token usage, response times, and model performance over time.
 
-- **Markdown Rendering**: Assistant messages render lists, code blocks, and formatting
-  ![Markdown](screenshots/markdown.png)
-
-- **Inspector Panel**: Debug metadata including request ID, duration, model, and token usage
-  ![Inspector](screenshots/inspector.png)
-
-- **Search & Filters**: Find conversations quickly with search and agent filters
-  ![Search & Filter](screenshots/search-filter.png)
-
-## Quickstart
-
-```bash
-cp .env.example .env
-# Edit .env with DATABASE_URL and OPENAI_API_KEY
-
-npm install
-npm run db:push
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000)
-
-## Demo Walkthrough (90 seconds)
+## Demo (90 seconds)
 
 1. Select a department agent (e.g., "Engineering") → Click "New Chat"
 2. Send a message (e.g., "Explain tradeoffs of SSE vs WebSockets")
 3. Click ⓘ icon on assistant response to open Inspector drawer
 4. View metadata: duration, request ID, model, token usage
 5. Correlate with Vercel logs using `request_id` from Inspector
-6. Switch agents to see different system prompts and response styles
+6. Refresh page → conversation and metadata persist in database
 
-## Why This Matters
+## Features
 
-**Department Agents** → Prompt routing for org roles. Each agent uses a specialized system prompt optimized for their domain (sales discovery, support troubleshooting, engineering tradeoffs).
-
-**Inspector** → Debuggability + request_id correlation. Every assistant response includes metadata (duration, model, tokens) that can be traced back to Vercel logs via `request_id` for production debugging.
-
-**Postgres Persistence** → Auditability + post-hoc analysis. All message metadata is stored in PostgreSQL, enabling analysis of token usage, response times, and model performance over time.
+- **Persistent Conversations**: All conversations and messages stored in Neon Postgres via Drizzle ORM
+- **Department Agents**: 5 specialized agents (General, Sales, Support, Engineering, Executive) with custom system prompts, stored per conversation
+- **Inspector Drawer**: Conversation tab (agent, system prompt, message count) and Message tab (duration, request ID, model, token usage)
+- **Request Tracing**: Every API request includes `X-Request-ID` header; structured JSON logs with `request_id`, `method`, `path`, `status`, `duration_ms`
+- **Persisted Metadata**: Message metadata (durationMs, requestId, model, usage) stored in `messages.meta` JSONB column
+- **Markdown Rendering**: Assistant messages render markdown (lists, bold, code blocks) with HTML sanitization
+- **Search & Filters**: Client-side search by title; agent filter chips
+- **Command Palette**: Cmd+K / Ctrl+K for quick actions (New Chat, Focus Composer, Switch Agent, Clear All)
 
 ## Architecture
 
@@ -77,20 +67,32 @@ flowchart LR
   M --> LLM["OpenAI API"]
 ```
 
-**Tech Stack**: Vercel (deployment), Next.js App Router (framework), Neon Postgres (database), Drizzle ORM (queries), OpenAI API (LLM), JSON logs + request_id (observability)
+**Tech Stack**: Next.js App Router (TypeScript), Neon Postgres, Drizzle ORM, OpenAI API, Vercel (deployment), JSON logs + request_id (observability)
 
-## Operational Notes
+## Quickstart
 
-**Vercel Logs**: Dashboard → Project → Logs. Search by `request_id` from `X-Request-ID` header for request correlation.
-
-**Schema Changes**: After deployment, apply to production:
 ```bash
-vercel env pull .env.production.local --environment=production
-export $(grep "^DATABASE_URL=" .env.production.local | xargs)
+cp .env.example .env
+# Edit .env with DATABASE_URL and OPENAI_API_KEY
+
+npm install
 npm run db:push
+npm run dev
 ```
 
-**Request Tracing**: All API responses include `X-Request-ID` header. Structured logs include `request_id`, `method`, `path`, `status`, `duration_ms`.
+Open [http://localhost:3000](http://localhost:3000)
+
+### Environment Variables
+
+- `DATABASE_URL` - Neon PostgreSQL connection string
+- `OPENAI_API_KEY` - OpenAI API key
+
+## Deploy (Vercel)
+
+1. Push to GitHub and import in Vercel
+2. Set environment variables: `DATABASE_URL`, `OPENAI_API_KEY`
+3. Deploy (API routes use `runtime = "nodejs"`)
+4. Run schema migrations: `vercel env pull .env.production.local --environment=production && export $(grep "^DATABASE_URL=" .env.production.local | xargs) && npm run db:push`
 
 ## API
 
@@ -101,6 +103,8 @@ npm run db:push
 - `POST /api/conversations/:id/messages` - Send message + get AI response
 - `DELETE /api/conversations/:id` - Delete conversation
 - `DELETE /api/conversations` - Clear all conversations
+
+All responses include `X-Request-ID` header. Structured logs include `request_id`, `method`, `path`, `status`, `duration_ms`.
 
 ## Development
 
