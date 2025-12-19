@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { AGENT_IDS, AGENT_NAMES, type AgentId } from '@/lib/agents';
+import { Badge } from './Badge';
 
 interface SidebarProps {
   selectedAgent: AgentId;
@@ -43,31 +44,41 @@ export function Sidebar({
   return (
     <div className="w-64 bg-slate-950 text-slate-100 flex flex-col border-r border-slate-800">
       {/* Brand Block */}
-      <div className="p-6 border-b border-slate-800">
+      <div className="p-6 pb-5 border-b border-slate-800">
         <h1 className="text-lg font-semibold text-slate-100 mb-1">Chatbot with Memory</h1>
         <p className="text-xs text-slate-500">Department Agents</p>
       </div>
 
       {/* Agent Selector */}
-      <div className="p-4 border-b border-slate-800">
-        <label className="block text-xs font-medium text-slate-400 mb-2">
-          Department Agent
+      <div className="px-4 py-3 border-b border-slate-800">
+        <label className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wide">
+          Agent
         </label>
-        <select
-          value={selectedAgent}
-          onChange={(e) => onAgentChange(e.target.value as AgentId)}
-          className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-md text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          {AGENT_IDS.map(agentId => (
-            <option key={agentId} value={agentId} className="bg-slate-900">
-              {AGENT_NAMES[agentId]}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={selectedAgent}
+            onChange={(e) => onAgentChange(e.target.value as AgentId)}
+            className="w-full px-3 py-2 pr-8 bg-slate-900 border border-slate-800 rounded-md text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+          >
+            {AGENT_IDS.map(agentId => (
+              <option key={agentId} value={agentId} className="bg-slate-900">
+                {AGENT_NAMES[agentId]}
+              </option>
+            ))}
+          </select>
+          <svg
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </div>
 
       {/* Actions */}
-      <div className="p-4 border-b border-slate-800 space-y-2">
+      <div className="px-4 py-3 border-b border-slate-800 space-y-2">
         <button
           onClick={onNewChat}
           className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm transition-colors"
@@ -83,7 +94,10 @@ export function Sidebar({
       </div>
 
       {/* Search */}
-      <div className="p-4 border-b border-slate-800">
+      <div className="px-4 py-3 border-b border-slate-800">
+        <label className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wide">
+          Search
+        </label>
         <input
           type="text"
           placeholder="Search conversations..."
@@ -94,13 +108,16 @@ export function Sidebar({
       </div>
 
       {/* Agent Filter Chips */}
-      <div className="p-4 border-b border-slate-800">
+      <div className="px-4 py-3 border-b border-slate-800">
+        <label className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wide">
+          Filter
+        </label>
         <div className="flex flex-wrap gap-1.5">
           {(['all', ...AGENT_IDS] as const).map(agentId => (
             <button
               key={agentId}
               onClick={() => setFilterAgent(agentId)}
-              className={`px-2 py-1 rounded-full text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 filterAgent === agentId
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -138,9 +155,7 @@ export function Sidebar({
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-full text-xs font-medium">
-                        {AGENT_NAMES[conv.agentId as AgentId] || 'General'}
-                      </span>
+                      <Badge agentId={conv.agentId} variant="default" />
                       <span className="text-xs text-slate-500">
                         {formatDate(conv.createdAt)}
                       </span>
@@ -151,8 +166,8 @@ export function Sidebar({
                       e.stopPropagation();
                       onDeleteConversation(conv.id);
                     }}
-                    className="opacity-0 group-hover:opacity-100 ml-2 p-1 text-slate-500 hover:text-red-400 active:text-red-500 transition-all rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                    title="Delete conversation"
+                    className="opacity-40 group-hover:opacity-100 focus:opacity-100 ml-2 p-1 text-slate-500 hover:text-red-400 active:text-red-500 transition-all rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                    aria-label="Delete conversation"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
