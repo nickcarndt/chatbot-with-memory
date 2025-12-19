@@ -40,23 +40,23 @@ Open [http://localhost:3000](http://localhost:3000)
 flowchart LR
   U[User / Browser] -->|HTTPS| UI
 
-  subgraph UI[Next.js App (Vercel)]
+  subgraph UI["Next.js App (Vercel)"]
     direction LR
-    C[Client UI<br/>(Chat + Sidebar + Inspector)] --> API[App Router API Routes<br/>(Serverless / Node.js)]
-    MW[Middleware<br/>Request ID] --> API
-    API --> LOGS[Structured Logs<br/>(Vercel Logs)]
+    C["Client UI<br/>(Chat + Sidebar + Inspector)"] --> API["App Router API Routes<br/>(Serverless / Node.js)"]
+    MW["Middleware<br/>Request ID"] --> API
+    API --> LOGS["Structured Logs<br/>(Vercel Logs)"]
   end
 
-  subgraph APIROUTES[API Surface]
+  subgraph APIROUTES["API Surface"]
     direction TB
-    H[/GET /api/health/]
-    L[/GET|POST|DELETE /api/conversations/]
-    M[/POST /api/conversations/:id/messages/]
+    H["/GET /api/health/"]
+    L["/GET|POST|DELETE /api/conversations/"]
+    M["/POST /api/conversations/:id/messages/"]
   end
 
   API --> APIROUTES
-  APIROUTES --> DB[(Neon Postgres<br/>Drizzle ORM)]
-  M --> LLM[OpenAI API]
+  APIROUTES --> DB[("Neon Postgres<br/>Drizzle ORM")]
+  M --> LLM["OpenAI API"]
 ```
 
 **Tech Stack**: Vercel (deployment), Next.js App Router (framework), Neon Postgres (database), Drizzle ORM (queries), OpenAI API (LLM), JSON logs + request_id (observability)
