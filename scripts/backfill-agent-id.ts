@@ -5,11 +5,14 @@
  */
 
 import { neon } from '@neondatabase/serverless';
-import { getEnv } from '../lib/env';
 
 async function backfill() {
-  const env = getEnv();
-  const sql = neon(env.DATABASE_URL);
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.error('❌ DATABASE_URL environment variable is required');
+    process.exit(1);
+  }
+  const sql = neon(databaseUrl);
 
   try {
     // Update any conversations without agent_id (shouldn't happen with default, but safe)
