@@ -42,6 +42,14 @@ Open [http://localhost:3000](http://localhost:3000)
 - **Persistent Memory**: Conversation history and message metadata stored in PostgreSQL
 - **Enterprise UI**: Clean, modern interface with command palette (Cmd+K), search, and filters
 
+## Why This Matters
+
+**Department Agents** → Prompt routing for org roles. Each agent uses a specialized system prompt optimized for their domain (sales discovery, support troubleshooting, engineering tradeoffs).
+
+**Inspector** → Debuggability + request_id correlation. Every assistant response includes metadata (duration, model, tokens) that can be traced back to Vercel logs via `request_id` for production debugging.
+
+**Metadata Persistence** → Post-hoc analysis, cost + latency visibility. All message metadata is stored in PostgreSQL, enabling analysis of token usage, response times, and model performance over time.
+
 ## 90-Second Demo Script
 
 1. Select agent (e.g., "Engineering") → Click "New Chat"

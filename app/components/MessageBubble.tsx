@@ -25,7 +25,7 @@ export function MessageBubble({ role, content, messageId, isSelected, onSelect }
     <div className="flex justify-start">
       <div
         onClick={onSelect}
-        className={`max-w-[72ch] rounded-lg bg-white border shadow-sm cursor-pointer transition-all ${
+        className={`max-w-[68ch] rounded-lg bg-white border shadow-sm cursor-pointer transition-all ${
           isSelected
             ? 'border-blue-400 ring-2 ring-blue-200'
             : 'border-slate-200 hover:border-slate-300'

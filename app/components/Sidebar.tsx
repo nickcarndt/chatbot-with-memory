@@ -140,7 +140,7 @@ export function Sidebar({
             {filteredConversations.map(conv => (
               <div
                 key={conv.id}
-                className={`group relative p-3 mb-1 rounded-md cursor-pointer transition-colors ${
+                className={`group relative p-2.5 mb-1 rounded-md cursor-pointer transition-colors ${
                   currentConversationId === conv.id
                     ? 'bg-slate-900/60 border-l-2 border-l-blue-500'
                     : 'hover:bg-slate-900/40 active:bg-slate-900/50'
@@ -148,15 +148,13 @@ export function Sidebar({
                 onClick={() => onSelectConversation(conv.id)}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm font-medium text-slate-100 truncate">
-                        {conv.title}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                    <p className="text-sm font-medium leading-5 text-slate-100 truncate">
+                      {conv.title}
+                    </p>
+                    <div className="flex items-baseline gap-2">
                       <Badge agentId={conv.agentId} variant="default" />
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-slate-500 leading-none">
                         {formatDate(conv.createdAt)}
                       </span>
                     </div>

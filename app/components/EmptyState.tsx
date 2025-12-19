@@ -24,10 +24,10 @@ export function EmptyState({ onStartChat }: EmptyStateProps) {
           </svg>
         </div>
         <h2 className="text-lg font-semibold text-slate-900 mb-2">
-          Welcome to Chatbot with Memory
+          Start a conversation
         </h2>
         <p className="text-sm text-slate-500 mb-6">
-          Select a department agent and start a new conversation
+          Pick an agent to match the department
         </p>
         <button
           onClick={onStartChat}
