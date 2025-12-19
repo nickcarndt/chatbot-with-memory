@@ -1,0 +1,169 @@
+'use client';
+
+import { useState } from 'react';
+import { AGENT_IDS, AGENT_NAMES, type AgentId } from '@/lib/agents';
+
+interface SidebarProps {
+  selectedAgent: AgentId;
+  onAgentChange: (agent: AgentId) => void;
+  onNewChat: () => void;
+  onClearAll: () => void;
+  conversations: Array<{
+    id: string;
+    title: string;
+    agentId: string;
+    createdAt: string;
+  }>;
+  currentConversationId: string | null;
+  onSelectConversation: (id: string) => void;
+  onDeleteConversation: (id: string) => void;
+  formatDate: (date: string | undefined | null) => string;
+}
+
+export function Sidebar({
+  selectedAgent,
+  onAgentChange,
+  onNewChat,
+  onClearAll,
+  conversations,
+  currentConversationId,
+  onSelectConversation,
+  onDeleteConversation,
+  formatDate,
+}: SidebarProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterAgent, setFilterAgent] = useState<AgentId | 'all'>('all');
+
+  const filteredConversations = conversations.filter(conv => {
+    const matchesSearch = conv.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterAgent === 'all' || conv.agentId === filterAgent;
+    return matchesSearch && matchesFilter;
+  });
+
+  return (
+    <div className="w-64 bg-slate-950 text-slate-100 flex flex-col border-r border-slate-800">
+      {/* Brand Block */}
+      <div className="p-6 border-b border-slate-800">
+        <h1 className="text-lg font-semibold text-slate-100 mb-1">Chatbot with Memory</h1>
+        <p className="text-xs text-slate-500">Department Agents</p>
+      </div>
+
+      {/* Agent Selector */}
+      <div className="p-4 border-b border-slate-800">
+        <label className="block text-xs font-medium text-slate-400 mb-2">
+          Department Agent
+        </label>
+        <select
+          value={selectedAgent}
+          onChange={(e) => onAgentChange(e.target.value as AgentId)}
+          className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-md text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          {AGENT_IDS.map(agentId => (
+            <option key={agentId} value={agentId} className="bg-slate-900">
+              {AGENT_NAMES[agentId]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Actions */}
+      <div className="p-4 border-b border-slate-800 space-y-2">
+        <button
+          onClick={onNewChat}
+          className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm transition-colors"
+        >
+          New Chat
+        </button>
+        <button
+          onClick={onClearAll}
+          className="w-full px-4 py-2 border border-red-600/30 text-red-400 rounded-md hover:bg-red-600/10 active:bg-red-600/20 focus:outline-none focus:ring-2 focus:ring-red-500/50 font-medium text-sm transition-colors"
+        >
+          Clear All
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="p-4 border-b border-slate-800">
+        <input
+          type="text"
+          placeholder="Search conversations..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-md text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
+      {/* Agent Filter Chips */}
+      <div className="p-4 border-b border-slate-800">
+        <div className="flex flex-wrap gap-1.5">
+          {(['all', ...AGENT_IDS] as const).map(agentId => (
+            <button
+              key={agentId}
+              onClick={() => setFilterAgent(agentId)}
+              className={`px-2 py-1 rounded-full text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                filterAgent === agentId
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              {agentId === 'all' ? 'All' : AGENT_NAMES[agentId]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Conversations List */}
+      <div className="flex-1 overflow-y-auto">
+        {filteredConversations.length === 0 ? (
+          <div className="p-4 text-sm text-slate-500 text-center">
+            {conversations.length === 0 ? 'No conversations yet' : 'No matches'}
+          </div>
+        ) : (
+          <div className="p-2">
+            {filteredConversations.map(conv => (
+              <div
+                key={conv.id}
+                className={`group relative p-3 mb-1 rounded-md cursor-pointer transition-colors ${
+                  currentConversationId === conv.id
+                    ? 'bg-slate-900/60 border-l-2 border-l-blue-500'
+                    : 'hover:bg-slate-900/40 active:bg-slate-900/50'
+                }`}
+                onClick={() => onSelectConversation(conv.id)}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-medium text-slate-100 truncate">
+                        {conv.title}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-full text-xs font-medium">
+                        {AGENT_NAMES[conv.agentId as AgentId] || 'General'}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {formatDate(conv.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteConversation(conv.id);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 ml-2 p-1 text-slate-500 hover:text-red-400 active:text-red-500 transition-all rounded-md hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                    title="Delete conversation"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

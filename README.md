@@ -149,6 +149,30 @@ This scans tracked files for accidental secret commits (API keys, database URLs,
 - **Use `.env.example`** for documentation only (placeholders only)
 - **Vercel deployment**: Add `DATABASE_URL` and `OPENAI_API_KEY` in Vercel dashboard
 
+## UI Polish Checklist
+
+### Design System Compliance
+- **No gradients**: All solid colors (slate/gray + blue accent)
+- **Consistent radii**: `rounded-lg` (containers), `rounded-md` (inputs/buttons), `rounded-full` (badges)
+- **Subtle shadows**: Only `shadow-sm`
+- **Typography**: `text-lg/semibold` (headings), `text-sm` (body), `text-slate-500` (muted)
+- **Focus rings**: `focus:ring-2 focus:ring-blue-500` on all interactive elements
+
+### Features
+- **Eval Mode**: Toggle in chat header to view agent system prompt and conversation details
+- **Response Details**: Collapsible details per assistant message (duration, agent, request_id)
+- **Command Palette**: Press `Cmd+K` / `Ctrl+K` for quick actions
+- **Sidebar Search**: Filter conversations by title
+- **Agent Filters**: Filter conversations by agent type
+- **Mobile**: Sidebar hidden on mobile (responsive layout)
+
+### Quick Visual Test
+1. Sidebar: Dark (`bg-slate-950`), clean, professional
+2. Empty state: Centered, minimal, clear CTA
+3. Messages: Clean bubbles (`max-w-[72ch]`), good spacing
+4. Composer: Sticky bottom, clean input, focus states
+5. Overall: Enterprise SaaS aesthetic (Linear/Vercel/Stripe-like)
+
 ## License
 
 MIT

@@ -2,14 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global baseline: light theme with high contrast */
+/* Base styles */
 html,
 body {
   background: #f8fafc;
   color: #0f172a;
 }
 
-/* Text selection styling for readability */
+/* Text selection for readability */
 ::selection {
   background: rgba(59, 130, 246, 0.35);
   color: #0f172a;
@@ -18,17 +18,4 @@ body {
 ::-moz-selection {
   background: rgba(59, 130, 246, 0.35);
   color: #0f172a;
-}
-
-/* Dark mode selection (for future use) */
-@media (prefers-color-scheme: dark) {
-  ::selection {
-    background: rgba(59, 130, 246, 0.45);
-    color: #f8fafc;
-  }
-
-  ::-moz-selection {
-    background: rgba(59, 130, 246, 0.45);
-    color: #f8fafc;
-  }
 }
