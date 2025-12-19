@@ -26,9 +26,17 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
-  durationMs?: number;
-  agentId?: string;
-  requestId?: string;
+  meta?: {
+    requestId?: string;
+    durationMs?: number;
+    agentId?: string;
+    model?: string;
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+    };
+  };
 }
 
 export default function Home() {
@@ -157,9 +165,6 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
 
-    const startTime = Date.now();
-    let requestId: string | undefined;
-
     try {
       const response = await fetch(`/api/conversations/${currentConversation.id}/messages`, {
         method: 'POST',
@@ -170,22 +175,15 @@ export default function Home() {
         }),
       });
 
-      requestId = response.headers.get('X-Request-ID') || undefined;
-
       if (!response.ok) {
         const error = await response.json();
         setMessages(prev => prev.slice(0, -1));
-        setError(`Error: ${error.error?.message || 'Failed to send message'}\nRequest ID: ${error.error?.request_id || requestId || 'unknown'}`);
+        const requestId = response.headers.get('X-Request-ID') || error.error?.request_id || 'unknown';
+        setError(`Error: ${error.error?.message || 'Failed to send message'}\nRequest ID: ${requestId}`);
         return;
       }
 
-      const durationMs = Date.now() - startTime;
-      const assistantMessage: Message = {
-        ...(await response.json()),
-        durationMs,
-        agentId: currentConversation.agentId,
-        requestId,
-      };
+      const assistantMessage: Message = await response.json();
       setMessages(prev => [...prev, assistantMessage]);
 
       // Refresh conversation to get updated title

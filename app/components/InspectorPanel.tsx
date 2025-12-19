@@ -5,9 +5,17 @@ import { AGENT_NAMES, getAgentSystemPrompt, type AgentId } from '@/lib/agents';
 
 interface MessageMetadata {
   id: string;
-  agentId?: string;
-  durationMs?: number;
-  requestId?: string;
+  meta?: {
+    requestId?: string;
+    durationMs?: number;
+    agentId?: string;
+    model?: string;
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+    };
+  };
 }
 
 interface InspectorPanelProps {
@@ -134,27 +142,27 @@ export function InspectorPanel({ isOpen, selectedMessage, conversationAgentId, m
                 <div>
                   <div className="text-xs font-medium text-slate-700 mb-1">Duration</div>
                   <div className="text-sm text-slate-900 font-mono">
-                    {selectedMessage.durationMs !== undefined ? `${selectedMessage.durationMs}ms` : '—'}
+                    {selectedMessage.meta?.durationMs !== undefined ? `${selectedMessage.meta.durationMs}ms` : '—'}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs font-medium text-slate-700 mb-1">Agent</div>
                   <div className="text-sm text-slate-900">
-                    {selectedMessage.agentId
-                      ? AGENT_NAMES[selectedMessage.agentId as AgentId] || selectedMessage.agentId
+                    {selectedMessage.meta?.agentId
+                      ? AGENT_NAMES[selectedMessage.meta.agentId as AgentId] || selectedMessage.meta.agentId
                       : '—'}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs font-medium text-slate-700 mb-1">Request ID</div>
-                  {selectedMessage.requestId ? (
+                  {selectedMessage.meta?.requestId ? (
                     <div className="flex items-center gap-2">
                       <code className="text-xs text-slate-900 font-mono bg-slate-50 px-2 py-1 rounded border border-slate-200 flex-1 break-all">
-                        {selectedMessage.requestId}
+                        {selectedMessage.meta.requestId}
                       </code>
                       <button
                         onClick={() => {
-                          navigator.clipboard.writeText(selectedMessage.requestId!);
+                          navigator.clipboard.writeText(selectedMessage.meta!.requestId!);
                         }}
                         className="px-2 py-1 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                         title="Copy Request ID"
@@ -166,6 +174,29 @@ export function InspectorPanel({ isOpen, selectedMessage, conversationAgentId, m
                     <div className="text-sm text-slate-400">—</div>
                   )}
                 </div>
+                {selectedMessage.meta?.usage && (
+                  <div className="pt-4 border-t border-slate-200">
+                    <div className="text-xs font-medium text-slate-700 mb-2">Usage</div>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Model:</span>
+                        <span className="text-slate-900">{selectedMessage.meta.model ?? '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Prompt tokens:</span>
+                        <span className="text-slate-900 font-mono">{selectedMessage.meta.usage.prompt_tokens ?? '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Completion tokens:</span>
+                        <span className="text-slate-900 font-mono">{selectedMessage.meta.usage.completion_tokens ?? '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Total tokens:</span>
+                        <span className="text-slate-900 font-mono">{selectedMessage.meta.usage.total_tokens ?? '—'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-center">

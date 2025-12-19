@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import { getChatCompletion, MODEL } from '@/lib/llm';
 import { logInfo, logError } from '@/lib/logger';
 import { getAgentSystemPrompt } from '@/lib/agents';
+import { randomUUID } from 'crypto';
 
 export const runtime = 'nodejs';
 
@@ -15,7 +16,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   return withLogging(request, async () => {
-    const requestId = getRequestId(request);
+    const requestId = request.headers.get('x-request-id') ?? randomUUID();
 
     // Validate UUID
     const uuidValidation = validateUuid(params.id);
@@ -91,11 +92,12 @@ export async function POST(
     }
 
     // Save user message
-    await db.insert(messages).values({
+    const [userMessage] = await db.insert(messages).values({
       conversationId: params.id,
       role,
       content,
-    });
+      meta: {},
+    }).returning();
 
     // Update conversation title if it's the first user message
     if (conversation.title === 'New Conversation' && role === 'user') {
@@ -126,8 +128,10 @@ export async function POST(
     ];
 
     // Generate assistant response with memory
-    const startTime = Date.now();
+    const t0 = Date.now();
     let assistantContent: string;
+    let model: string = MODEL;
+    let usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number } | undefined;
 
     try {
       const result = await getChatCompletion(
@@ -136,8 +140,10 @@ export async function POST(
       );
 
       assistantContent = result.content;
+      model = result.model;
+      usage = result.usage;
 
-      const durationMs = Date.now() - startTime;
+      const durationMs = Date.now() - t0;
       logInfo('openai_request_success', {
         request_id: requestId,
         conversation_id: params.id,
@@ -146,7 +152,7 @@ export async function POST(
         message_count: history.length,
       });
     } catch (error) {
-      const durationMs = Date.now() - startTime;
+      const durationMs = Date.now() - t0;
       assistantContent = "I apologize, but I'm having trouble connecting to my AI service right now. Please try again later.";
 
       logError('openai_request_failed', {
@@ -159,16 +165,34 @@ export async function POST(
       });
     }
 
-    // Save assistant message
+    const durationMs = Date.now() - t0;
+
+    // Save assistant message with metadata
     const [assistantMessage] = await db
       .insert(messages)
       .values({
         conversationId: params.id,
         role: 'assistant',
         content: assistantContent,
+        meta: {
+          requestId,
+          durationMs,
+          agentId: conversation.agentId,
+          model,
+          usage,
+        },
       })
       .returning();
 
-    return NextResponse.json(assistantMessage, { status: 201 });
+    // Return assistant message with metadata
+    const response = NextResponse.json(
+      {
+        ...assistantMessage,
+        meta: assistantMessage.meta || {},
+      },
+      { status: 201 }
+    );
+    response.headers.set('X-Request-ID', requestId);
+    return response;
   }, 'create_message');
 }
