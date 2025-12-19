@@ -15,11 +15,12 @@ interface InspectorPanelProps {
   selectedMessage: MessageMetadata | null;
   conversationAgentId: string;
   messageCount: number;
+  activeTab: 'conversation' | 'message';
   onClose: () => void;
+  onTabChange: (tab: 'conversation' | 'message') => void;
 }
 
-export function InspectorPanel({ isOpen, selectedMessage, conversationAgentId, messageCount, onClose }: InspectorPanelProps) {
-  const [activeTab, setActiveTab] = useState<'conversation' | 'message'>('conversation');
+export function InspectorPanel({ isOpen, selectedMessage, conversationAgentId, messageCount, activeTab, onTabChange, onClose }: InspectorPanelProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const firstFocusableRef = useRef<HTMLButtonElement>(null);
 
@@ -79,7 +80,7 @@ export function InspectorPanel({ isOpen, selectedMessage, conversationAgentId, m
           </div>
           <div className="flex gap-1 bg-slate-100 p-1 rounded-md">
             <button
-              onClick={() => setActiveTab('conversation')}
+              onClick={() => onTabChange('conversation')}
               className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 activeTab === 'conversation'
                   ? 'bg-white text-slate-900 shadow-sm'
@@ -89,7 +90,7 @@ export function InspectorPanel({ isOpen, selectedMessage, conversationAgentId, m
               Conversation
             </button>
             <button
-              onClick={() => setActiveTab('message')}
+              onClick={() => onTabChange('message')}
               className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 activeTab === 'message'
                   ? 'bg-white text-slate-900 shadow-sm'

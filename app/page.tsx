@@ -41,11 +41,29 @@ export default function Home() {
   const [evalMode, setEvalMode] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [inspectorTab, setInspectorTab] = useState<'conversation' | 'message'>('conversation');
   const composerRef = useRef<ComposerRef>(null);
 
   useEffect(() => {
     loadConversations();
+    // Restore Inspector state from localStorage
+    const savedOpen = localStorage.getItem('inspector_open');
+    const savedTab = localStorage.getItem('inspector_tab');
+    if (savedOpen === 'true') {
+      setEvalMode(true);
+    }
+    if (savedTab === 'conversation' || savedTab === 'message') {
+      setInspectorTab(savedTab);
+    }
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('inspector_open', evalMode.toString());
+  }, [evalMode]);
+
+  useEffect(() => {
+    localStorage.setItem('inspector_tab', inspectorTab);
+  }, [inspectorTab]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -279,7 +297,22 @@ export default function Home() {
                     content={msg.content}
                     messageId={msg.id}
                     isSelected={selectedMessageId === msg.id}
-                    onSelect={() => setSelectedMessageId(msg.id === selectedMessageId ? null : msg.id)}
+                    onSelect={() => {
+                      if (msg.role === 'assistant') {
+                        const isCurrentlySelected = msg.id === selectedMessageId;
+                        if (isCurrentlySelected) {
+                          // Deselect
+                          setSelectedMessageId(null);
+                        } else {
+                          // Auto-open Inspector and switch to Message tab
+                          setEvalMode(true);
+                          setInspectorTab('message');
+                          setSelectedMessageId(msg.id);
+                        }
+                      } else {
+                        setSelectedMessageId(msg.id === selectedMessageId ? null : msg.id);
+                      }
+                    }}
                   />
                 ))
               )}
@@ -305,6 +338,8 @@ export default function Home() {
           }
           conversationAgentId={currentConversation.agentId}
           messageCount={messages.length}
+          activeTab={inspectorTab}
+          onTabChange={setInspectorTab}
           onClose={() => setEvalMode(false)}
         />
       )}
