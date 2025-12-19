@@ -7,6 +7,7 @@ import { Sidebar } from './components/Sidebar';
 import { ChatHeader } from './components/ChatHeader';
 import { EvalModePanel } from './components/EvalModePanel';
 import { MessageBubble } from './components/MessageBubble';
+import { InspectorPanel } from './components/InspectorPanel';
 import { Composer, type ComposerRef } from './components/Composer';
 import { EmptyState } from './components/EmptyState';
 import { LoadingIndicator } from './components/LoadingIndicator';
@@ -40,6 +41,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [evalMode, setEvalMode] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const composerRef = useRef<ComposerRef>(null);
 
   useEffect(() => {
@@ -282,9 +284,9 @@ export default function Home() {
                     key={msg.id}
                     role={msg.role}
                     content={msg.content}
-                    agentId={msg.agentId}
-                    durationMs={msg.durationMs}
-                    requestId={msg.requestId}
+                    messageId={msg.id}
+                    isSelected={selectedMessageId === msg.id}
+                    onSelect={() => setSelectedMessageId(msg.id === selectedMessageId ? null : msg.id)}
                   />
                 ))
               )}
@@ -298,6 +300,18 @@ export default function Home() {
           <EmptyState onStartChat={createNewConversation} />
         )}
       </div>
+
+      {/* Inspector Panel */}
+      {currentConversation && (
+        <InspectorPanel
+          selectedMessage={
+            selectedMessageId
+              ? messages.find(m => m.id === selectedMessageId) || null
+              : null
+          }
+          onClose={() => setSelectedMessageId(null)}
+        />
+      )}
 
       <CommandPalette
         isOpen={commandPaletteOpen}

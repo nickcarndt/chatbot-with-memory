@@ -117,7 +117,7 @@ export function Sidebar({
             <button
               key={agentId}
               onClick={() => setFilterAgent(agentId)}
-              className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`px-2 py-0.5 rounded-full text-xs font-medium leading-none transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 filterAgent === agentId
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700'

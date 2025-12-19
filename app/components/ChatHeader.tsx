@@ -19,17 +19,30 @@ export function ChatHeader({ title, agentId, evalMode, onEvalModeToggle }: ChatH
         </div>
         <button
           onClick={onEvalModeToggle}
-          aria-pressed={evalMode}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-            evalMode ? 'bg-blue-600' : 'bg-slate-300'
-          }`}
+          role="switch"
+          aria-checked={evalMode}
+          aria-label="Inspector"
+          className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-1 -mx-1"
         >
+          <span className="text-sm text-slate-600">Inspector</span>
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              evalMode ? 'translate-x-5' : 'translate-x-0.5'
+            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+              evalMode ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'
             }`}
-          />
-          <span className="sr-only">Eval Mode {evalMode ? 'ON' : 'OFF'}</span>
+          >
+            {evalMode ? 'ON' : 'OFF'}
+          </span>
+          <div
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              evalMode ? 'bg-blue-600' : 'bg-slate-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                evalMode ? 'translate-x-5' : 'translate-x-0.5'
+              }`}
+            />
+          </div>
         </button>
       </div>
     </div>

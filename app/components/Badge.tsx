@@ -10,7 +10,7 @@ interface BadgeProps {
 export function Badge({ agentId, variant = 'default' }: BadgeProps) {
   const agentName = AGENT_NAMES[agentId as AgentId] || agentId;
 
-  const baseClasses = 'px-2 py-0.5 rounded-full text-xs font-medium';
+  const baseClasses = 'px-2 py-0.5 rounded-full text-xs font-medium leading-none';
   
   const variantClasses = {
     default: 'bg-slate-800 text-slate-300',
