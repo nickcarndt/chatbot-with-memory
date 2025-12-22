@@ -34,22 +34,36 @@ export function normalizeMcpUrl(baseUrl: string | undefined): string {
 
 function parseSseResponse(text: string): RpcResponse {
   const lines = text.split('\n');
-  let lastDataLine = '';
-  
+  const payloads: string[] = [];
+
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith('data: ')) {
-      lastDataLine = trimmed.substring(6); // Remove 'data: ' prefix
+      payloads.push(trimmed.substring(6)); // Remove 'data: ' prefix
     } else if (trimmed.startsWith('data:')) {
-      lastDataLine = trimmed.substring(5); // Remove 'data:' prefix (no space)
+      payloads.push(trimmed.substring(5)); // Remove 'data:' prefix (no space)
     }
   }
-  
-  if (!lastDataLine) {
-    throw new Error('No data: line found in SSE response');
+
+  let lastValid: RpcResponse | null = null;
+  for (const payload of payloads) {
+    const candidate = payload.trim();
+    if (!candidate || candidate === '[DONE]') continue;
+    try {
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === 'object' && (parsed as any).jsonrpc === '2.0' && ('result' in parsed || 'error' in parsed)) {
+        lastValid = parsed as RpcResponse;
+      }
+    } catch {
+      // ignore malformed chunks
+    }
   }
-  
-  return JSON.parse(lastDataLine) as RpcResponse;
+
+  if (!lastValid) {
+    throw new Error('No JSON-RPC payload found in SSE');
+  }
+
+  return lastValid;
 }
 
 async function rpcRequest(method: string, params: Record<string, unknown>, timeoutMs = DEFAULT_TIMEOUT_MS) {
