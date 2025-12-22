@@ -54,7 +54,7 @@ export async function withLogging<T>(
     const result = await handler();
     const durationMs = Date.now() - startTime;
     let status = 200;
-    if (result instanceof NextResponse) {
+    if (result instanceof Response) {
       status = result.status;
     }
 

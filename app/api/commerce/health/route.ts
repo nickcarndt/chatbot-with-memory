@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
         { status: 200 }
       );
       response.headers.set('X-Request-ID', requestId);
+      response.headers.set('Cache-Control', 'no-store');
       return response;
     }
 
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
         { status: 200 }
       );
       response.headers.set('X-Request-ID', requestId);
+      response.headers.set('Cache-Control', 'no-store');
       return response;
     } catch (error: any) {
       const response = NextResponse.json(
@@ -44,6 +46,7 @@ export async function GET(request: NextRequest) {
         { status: 200 }
       );
       response.headers.set('X-Request-ID', requestId);
+      response.headers.set('Cache-Control', 'no-store');
       return response;
     }
   }, 'commerce_health');
