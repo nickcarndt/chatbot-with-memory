@@ -355,20 +355,6 @@ export default function Home() {
                       {text}
                     </button>
                   ))}
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await fetch('/api/commerce/health');
-                        const data = await res.json();
-                        alert(`MCP Health: ${data.ok && data.mcp ? '✅ Connected' : data.disabled ? '⚠️ Disabled' : '❌ Failed'}\n\n${JSON.stringify(data, null, 2)}`);
-                      } catch (error) {
-                        alert(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                      }
-                    }}
-                    className="px-3 py-1 text-xs rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                  >
-                    Diagnostics: MCP health
-                  </button>
                 </div>
               </div>
             )}
