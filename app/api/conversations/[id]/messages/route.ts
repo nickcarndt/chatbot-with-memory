@@ -95,6 +95,18 @@ function formatProductsPreview(products: Array<{ title?: string }>): string {
   return `ok=true total=${products.length}${sample.length ? ` sample=${JSON.stringify(sample)}` : ''}`;
 }
 
+function normalizeSearchQuery(raw: string): string {
+  const trimmed = raw.trim();
+  const lowered = trimmed.toLowerCase();
+  const prefixes = ['for ', 'a ', 'an ', 'the '];
+  for (const prefix of prefixes) {
+    if (lowered.startsWith(prefix)) {
+      return trimmed.substring(prefix.length).trim();
+    }
+  }
+  return trimmed;
+}
+
 function normalizeSearchResults(raw: any): NormalizedSearchItem[] {
   const list = Array.isArray(raw?.items) ? raw.items : Array.isArray(raw) ? raw : [];
   return list.slice(0, 5).map((item: any, idx: number) => {
@@ -375,12 +387,13 @@ export async function POST(
       }
 
       if (command.type === 'search') {
+        const toolQuery = normalizeSearchQuery(command.query);
         const mcpStart = Date.now();
         let toolTrace: ToolTraceEntry[] = [];
         let normalized: NormalizedSearchItem[] = [];
 
         try {
-          const mcpResult = await mcpCallTool('shopify_search_products', { query: command.query, limit: 5 });
+          const mcpResult = await mcpCallTool('shopify_search_products', { query: toolQuery, limit: 5 });
           const parsed = parseMcpContentJSON(mcpResult);
           const products: any[] = Array.isArray((parsed as any)?.products) ? (parsed as any).products : Array.isArray((parsed as any)?.result?.products) ? (parsed as any).result.products : [];
           if (!products || products.length === 0) {
@@ -402,7 +415,7 @@ export async function POST(
             tool: 'shopify_search_products',
             ok: true,
             durationMs,
-            inputPreview: buildPreview({ query: command.query }),
+            inputPreview: buildPreview({ query: toolQuery }),
             outputPreview: normalized.length
               ? formatProductsPreview(normalized.map(p => ({ title: p.title })))
               : 'ok=true total=0',
@@ -414,7 +427,7 @@ export async function POST(
             tool: 'shopify_search_products',
             ok: false,
             durationMs,
-            inputPreview: buildPreview({ query: command.query }),
+            inputPreview: buildPreview({ query: toolQuery }),
             outputPreview: buildPreview(formatMcpError(error)),
             at: new Date().toISOString(),
           });
@@ -461,67 +474,25 @@ export async function POST(
         }
 
         const listText = normalized
-          .map((item, idx) => `${idx + 1}. ${item.title} — ${item.price}${item.available === false ? ' (unavailable)' : ''}`)
+          .map((item, idx) => {
+            const inventory = item.available === undefined ? '' : item.available ? ' — in stock' : ' — out of stock';
+            return `${idx + 1}. ${item.title} — $${item.price}${inventory}`;
+          })
           .join('\n');
 
-        const llmMessages = [
-          {
-            role: 'system' as const,
-            content:
-              'You are a commerce assistant. Start with "✅ Shopify search complete" then use the provided search results to reply with a numbered list 1..N exactly as provided. Do not invent items. End with the line: Reply "checkout <n> qty <q>" (test mode).',
-          },
-          {
-            role: 'user' as const,
-            content: `Search results:\n${listText}`,
-          },
-        ];
-
-        let assistantContent = '';
-        let model: string = MODEL;
-        let usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number } | undefined;
-        const t0 = Date.now();
-
-        try {
-          const result = await getChatCompletion(llmMessages, params.id);
-          assistantContent = result.content;
-          model = result.model;
-          usage = result.usage;
-
-          const durationMs = Date.now() - t0;
-          logInfo('openai_request_success', {
-            request_id: requestId,
-            conversation_id: params.id,
-            model,
-            duration_ms: durationMs,
-            message_count: history.length,
-          });
-        } catch (error) {
-          const durationMs = Date.now() - t0;
-          assistantContent = 'Unable to format results right now. Please try again.';
-
-          logError('openai_request_failed', {
-            request_id: requestId,
-            conversation_id: params.id,
-            model: MODEL,
-            duration_ms: durationMs,
-            error: error instanceof Error ? error : new Error(String(error)),
-            message_count: history.length,
-          });
-        }
-
-        const durationMs = Date.now() - t0;
+        const durationMs = Date.now() - mcpStart;
 
         const [assistantMessage] = await db
           .insert(messages)
           .values({
             conversationId: params.id,
             role: 'assistant',
-            content: assistantContent,
+            content: `✅ Shopify search complete\n${listText}\n\nReply "checkout <n> qty <q>" (test mode).`,
             meta: {
               ...baseMeta,
               durationMs,
-              model,
-              usage,
+              model: MODEL,
+              usage: undefined,
               lastSearchResults: normalized,
               toolTrace,
               ipHash,

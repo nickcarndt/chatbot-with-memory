@@ -340,10 +340,11 @@ export default function Home() {
 
             {currentConversation.agentId === 'commerce' && (
               <div className="px-6 pb-2">
+                <div className="text-xs text-slate-500 mb-1">Try:</div>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    'search hoodies under $80',
-                    'search beanies',
+                    'search hoodie',
+                    'search beanie',
                     'checkout 1 qty 1',
                     'checkout 2 qty 2',
                   ].map((text) => (
