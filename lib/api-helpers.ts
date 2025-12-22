@@ -2,7 +2,7 @@
  * API helper functions for request handling and logging
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { logInfo, logError } from './logger';
 import { MAX_BODY_SIZE } from './validators';
 
@@ -53,12 +53,16 @@ export async function withLogging<T>(
   try {
     const result = await handler();
     const durationMs = Date.now() - startTime;
+    let status = 200;
+    if (result instanceof NextResponse) {
+      status = result.status;
+    }
 
     logInfo(`${eventName}_completed`, {
       request_id: requestId,
       method,
       path,
-      status: 200,
+      status,
       duration_ms: durationMs,
     });
 
@@ -70,8 +74,10 @@ export async function withLogging<T>(
       request_id: requestId,
       method,
       path,
+      status: 500,
       duration_ms: durationMs,
       error: error instanceof Error ? error : new Error(String(error)),
+      error_stack: error instanceof Error ? error.stack : undefined,
     });
 
     throw error;

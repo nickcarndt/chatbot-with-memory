@@ -268,6 +268,7 @@ export async function POST(
         agentId: conversation.agentId,
       };
 
+      try {
       if (!featureEnabled) {
         const [assistantMessage] = await db
           .insert(messages)
@@ -314,17 +315,23 @@ export async function POST(
       });
 
       if (!enforceLimits) {
-        return commerceResponse(
-          {
-            ok: false,
-            error: {
-              code: 'RATE_LIMITED',
-              message: 'Too many requests. Please try again later.',
-              request_id: requestId,
+        const [assistantMessage] = await db
+          .insert(messages)
+          .values({
+            conversationId: params.id,
+            role: 'assistant',
+            content: 'Rate limit reached — try again shortly.',
+            meta: {
+              ...baseMeta,
+              ipHash,
             },
-          },
-          429
-        );
+          })
+          .returning();
+
+        return commerceResponse({
+          ...assistantMessage,
+          meta: assistantMessage.meta || {},
+        });
       }
 
       if (command.type === 'search') {
@@ -356,17 +363,24 @@ export async function POST(
             at: new Date().toISOString(),
           });
 
-          return commerceResponse(
-            {
-              ok: false,
-              error: {
-                code: 'MCP_ERROR',
-                message: 'Search failed. Please try again.',
-                request_id: requestId,
+          const [assistantMessage] = await db
+            .insert(messages)
+            .values({
+              conversationId: params.id,
+              role: 'assistant',
+              content: 'MCP tools unavailable right now. Check COMMERCE_ENABLED + MCP_SERVER_URL.',
+              meta: {
+                ...baseMeta,
+                toolTrace,
+                ipHash,
               },
-            },
-            502
-          );
+            })
+            .returning();
+
+          return commerceResponse({
+            ...assistantMessage,
+            meta: assistantMessage.meta || {},
+          });
         }
 
         const listText = normalized
@@ -377,7 +391,7 @@ export async function POST(
           {
             role: 'system' as const,
             content:
-              'You are a commerce assistant. Use the provided search results to reply with a numbered list 1..N exactly as provided. Do not invent items. End with the line: Reply "checkout <n> qty <q>" (test mode).',
+              'You are a commerce assistant. Start with "✅ Shopify search complete" then use the provided search results to reply with a numbered list 1..N exactly as provided. Do not invent items. End with the line: Reply "checkout <n> qty <q>" (test mode).',
           },
           {
             role: 'user' as const,
@@ -531,38 +545,52 @@ export async function POST(
           at: new Date().toISOString(),
         });
 
-        return commerceResponse(
-          {
-            ok: false,
-            error: {
-              code: 'MCP_ERROR',
-              message: 'Checkout failed. Please try again.',
-              request_id: requestId,
+        const [assistantMessage] = await db
+          .insert(messages)
+          .values({
+            conversationId: params.id,
+            role: 'assistant',
+            content: 'MCP tools unavailable right now. Check COMMERCE_ENABLED + MCP_SERVER_URL.',
+            meta: {
+              ...baseMeta,
+              toolTrace,
+              ipHash,
             },
-          },
-          502
-        );
+          })
+          .returning();
+
+        return commerceResponse({
+          ...assistantMessage,
+          meta: assistantMessage.meta || {},
+        });
       }
 
       if (!checkoutUrl) {
-        return commerceResponse(
-          {
-            ok: false,
-            error: {
-              code: 'MCP_ERROR',
-              message: 'Checkout URL missing. Please try again.',
-              request_id: requestId,
+        const [assistantMessage] = await db
+          .insert(messages)
+          .values({
+            conversationId: params.id,
+            role: 'assistant',
+            content: 'Checkout URL missing. Please try again.',
+            meta: {
+              ...baseMeta,
+              toolTrace,
+              ipHash,
             },
-          },
-          502
-        );
+          })
+          .returning();
+
+        return commerceResponse({
+          ...assistantMessage,
+          meta: assistantMessage.meta || {},
+        });
       }
 
       const llmMessages = [
         {
           role: 'system' as const,
           content:
-            'You are a commerce assistant. Confirm checkout and include a single markdown link to the Stripe Checkout URL. Mention Stripe is in test mode. Do not add extra links.',
+            'You are a commerce assistant. Start with "✅ Stripe checkout created (test mode)" then include exactly one markdown link: [Open Stripe Checkout](<url>). Do not add extra links or text after the link.',
         },
         {
           role: 'user' as const,
@@ -591,7 +619,7 @@ export async function POST(
         });
       } catch (error) {
         const durationMs = Date.now() - t0;
-        assistantContent = `Here is your checkout link (Stripe test mode): [Open Stripe Checkout](${checkoutUrl})`;
+        assistantContent = `✅ Stripe checkout created (test mode)\n\n[Open Stripe Checkout](${checkoutUrl})`;
 
         logError('openai_request_failed', {
           request_id: requestId,
@@ -606,7 +634,9 @@ export async function POST(
       const durationMs = Date.now() - t0;
 
       if (!assistantContent.includes('[Open Stripe Checkout]')) {
-        assistantContent = `${assistantContent}\n\n[Open Stripe Checkout](${checkoutUrl})`;
+        assistantContent = `✅ Stripe checkout created (test mode)\n\n[Open Stripe Checkout](${checkoutUrl})`;
+      } else if (!assistantContent.includes('✅')) {
+        assistantContent = `✅ Stripe checkout created (test mode)\n\n${assistantContent}`;
       }
 
       const [assistantMessage] = await db
@@ -630,6 +660,41 @@ export async function POST(
         ...assistantMessage,
         meta: assistantMessage.meta || {},
       });
+      } catch (error: any) {
+        const clientIp = getClientIp(request);
+        const ipHash = hashIp(clientIp);
+        const fallbackStart = Date.now();
+        const errorMsg = error?.message || String(error) || 'Unknown error';
+        const durationMs = Date.now() - fallbackStart;
+
+        const [assistantMessage] = await db
+          .insert(messages)
+          .values({
+            conversationId: params.id,
+            role: 'assistant',
+            content: 'Commerce tools unavailable right now. Check COMMERCE_ENABLED + MCP_SERVER_URL.',
+            meta: {
+              ...baseMeta,
+              ipHash,
+              toolTrace: [
+                {
+                  tool: 'commerce_fallback',
+                  ok: false,
+                  durationMs,
+                  inputPreview: '',
+                  outputPreview: buildPreview(errorMsg),
+                  at: new Date().toISOString(),
+                },
+              ],
+            },
+          })
+          .returning();
+
+        return commerceResponse({
+          ...assistantMessage,
+          meta: assistantMessage.meta || {},
+        });
+      }
     }
     const systemPrompt = getAgentSystemPrompt(agentId);
     

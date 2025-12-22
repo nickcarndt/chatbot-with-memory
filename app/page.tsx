@@ -50,6 +50,7 @@ export default function Home() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [inspectorTab, setInspectorTab] = useState<'conversation' | 'message'>('conversation');
+  const [commerceEnabled, setCommerceEnabled] = useState<boolean | null>(null);
   const composerRef = useRef<ComposerRef>(null);
 
   useEffect(() => {
@@ -91,6 +92,17 @@ export default function Home() {
       setMessages([]);
     }
   }, [currentConversation]);
+
+  useEffect(() => {
+    if (currentConversation?.agentId === 'commerce') {
+      fetch('/api/commerce/health')
+        .then((res) => res.json())
+        .then((data) => setCommerceEnabled(data.ok === true && data.disabled !== true))
+        .catch(() => setCommerceEnabled(false));
+    } else {
+      setCommerceEnabled(null);
+    }
+  }, [currentConversation?.agentId]);
 
   const loadConversations = async () => {
     try {
@@ -283,7 +295,9 @@ export default function Home() {
 
             {currentConversation.agentId === 'commerce' && (
               <div className="mx-6 mt-4 mb-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                Commerce tools enabled (Shopify + Stripe • test mode)
+                {commerceEnabled === true
+                  ? 'Commerce tools enabled (Shopify + Stripe • test mode)'
+                  : 'Commerce tools disabled (set COMMERCE_ENABLED=true)'}
               </div>
             )}
 
