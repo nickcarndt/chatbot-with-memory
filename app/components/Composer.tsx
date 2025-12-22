@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 're
 
 export interface ComposerRef {
   focus: () => void;
+  setValue: (value: string) => void;
 }
 
 interface ComposerProps {
@@ -19,6 +20,16 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(({ onSend, disabl
   useImperativeHandle(ref, () => ({
     focus: () => {
       textareaRef.current?.focus();
+    },
+    setValue: (value: string) => {
+      setMessage(value);
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+          textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+          textareaRef.current.focus();
+        }
+      });
     },
   }));
 

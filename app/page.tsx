@@ -281,6 +281,12 @@ export default function Home() {
               onEvalModeToggle={() => setEvalMode(prev => !prev)}
             />
 
+            {currentConversation.agentId === 'commerce' && (
+              <div className="mx-6 mt-4 mb-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                Commerce tools enabled (Shopify + Stripe • test mode)
+              </div>
+            )}
+
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-slate-50">
               {messages.length === 0 ? (
@@ -317,6 +323,27 @@ export default function Home() {
               {isLoading && <LoadingIndicator />}
               {error && <ErrorDisplay error={error} />}
             </div>
+
+            {currentConversation.agentId === 'commerce' && (
+              <div className="px-6 pb-2">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'search hoodies under $80',
+                    'search beanies',
+                    'checkout 1 qty 1',
+                    'checkout 2 qty 2',
+                  ].map((text) => (
+                    <button
+                      key={text}
+                      onClick={() => composerRef.current?.setValue(text)}
+                      className="px-3 py-1 text-xs rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Composer ref={composerRef} onSend={sendMessage} disabled={isLoading} />
           </>

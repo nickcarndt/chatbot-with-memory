@@ -174,6 +174,64 @@ export function InspectorPanel({ isOpen, selectedMessage, conversationAgentId, m
                     <div className="text-sm text-slate-400">—</div>
                   )}
                 </div>
+                {Array.isArray((selectedMessage.meta as any)?.toolTrace) ? (
+                  <div className="pt-4 border-t border-slate-200 space-y-2">
+                    <div className="text-xs font-medium text-slate-700 mb-1">Tool Trace</div>
+                    <div className="space-y-2">
+                      {(selectedMessage.meta as any).toolTrace.map((entry: any, idx: number) => {
+                        const ok = entry?.ok === true;
+                        const tool = entry?.tool || 'unknown';
+                        const duration = typeof entry?.durationMs === 'number' ? `${entry.durationMs}ms` : '—';
+                        const at = typeof entry?.at === 'string' ? entry.at : '—';
+                        const outputPreview = entry?.outputPreview ?? '';
+                        const inputPreview = entry?.inputPreview ?? '';
+                        return (
+                          <div
+                            key={idx}
+                            className="border border-slate-200 rounded-md bg-slate-50 px-3 py-2 space-y-1"
+                          >
+                            <div className="flex items-center justify-between">
+                              <code className="text-xs text-slate-900 font-mono break-all">{tool}</code>
+                              <span
+                                className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                                  ok ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}
+                              >
+                                {ok ? 'ok' : 'fail'}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-600 flex items-center gap-3">
+                              <span>{duration}</span>
+                              <span className="text-slate-400">•</span>
+                              <span className="truncate" title={at}>{at}</span>
+                            </div>
+                            {outputPreview ? (
+                              <div className="text-[11px] text-slate-600 font-mono bg-white border border-slate-200 rounded px-2 py-1 max-h-24 overflow-auto whitespace-pre-wrap">
+                                {outputPreview}
+                              </div>
+                            ) : null}
+                            {inputPreview ? (
+                              <div className="text-[11px] text-slate-500 font-mono border border-dashed border-slate-200 rounded px-2 py-1 max-h-16 overflow-auto whitespace-pre-wrap">
+                                {inputPreview}
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (selectedMessage.meta && 'toolTrace' in (selectedMessage.meta as any) ? (
+                  <div className="pt-4 border-t border-slate-200">
+                    <div className="text-xs text-slate-500">Tool trace unavailable.</div>
+                  </div>
+                ) : null)}
+                {Array.isArray((selectedMessage.meta as any)?.lastSearchResults) ? (
+                  <div className="pt-2">
+                    <div className="text-xs text-slate-500">
+                      Last Search: {(selectedMessage.meta as any).lastSearchResults.length} item(s) cached
+                    </div>
+                  </div>
+                ) : null}
                 {selectedMessage.meta?.usage && (
                   <div className="pt-4 border-t border-slate-200">
                     <div className="text-xs font-medium text-slate-700 mb-2">Usage</div>

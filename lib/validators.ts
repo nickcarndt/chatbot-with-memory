@@ -6,8 +6,8 @@ import { z } from 'zod';
 
 export const uuidSchema = z.string().uuid('Invalid UUID format');
 
-export const agentIdSchema = z.enum(['general', 'sales', 'support', 'engineering', 'exec'], {
-  errorMap: () => ({ message: 'agent_id must be one of: general, sales, support, engineering, exec' }),
+export const agentIdSchema = z.enum(['general', 'sales', 'support', 'engineering', 'exec', 'commerce'], {
+  errorMap: () => ({ message: 'agent_id must be one of: general, sales, support, engineering, exec, commerce' }),
 });
 
 export const createConversationSchema = z.object({

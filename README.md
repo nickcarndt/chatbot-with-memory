@@ -110,6 +110,17 @@ Open [http://localhost:3000](http://localhost:3000)
 
 **Troubleshooting:** If `db:push` fails, verify `DATABASE_URL` uses Neon pooler URL (`?sslmode=require`).
 
+## Commerce (MCP) demo
+
+- Env: set `COMMERCE_ENABLED=true` and `MCP_SERVER_URL` to your MCP server URL (if it lacks `/mcp`, the client appends it).
+- Stripe runs in test mode.
+- Commerce agent shows a neutral banner + prompt chips (prefill) for common actions.
+- Script:
+  1. Select Commerce agent.
+  2. Send: `search hoodies under $80`.
+  3. Send: `checkout 1 qty 1`.
+  4. Open Inspector → Tool Trace + `request_id`.
+
 ## Deploy (Vercel)
 
 1. Push to GitHub and import in Vercel
