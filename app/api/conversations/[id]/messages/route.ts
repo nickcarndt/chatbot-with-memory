@@ -55,6 +55,26 @@ function buildPreview(value: unknown): string {
   return str.length > 180 ? `${str.slice(0, 177)}...` : str;
 }
 
+function formatMcpError(error: any): string {
+  if (!error || typeof error !== 'object') {
+    return String(error || 'error');
+  }
+  
+  const code = error.code || 'UNKNOWN';
+  const message = error.message || 'Error';
+  const data = error.data;
+  
+  if (data && typeof data === 'object') {
+    const parts = [`${code}: ${message}`];
+    if (data.status) parts.push(`status: ${data.status}`);
+    if (data.contentType) parts.push(`content-type: ${data.contentType}`);
+    if (data.bodyPreview) parts.push(`body: ${data.bodyPreview.substring(0, 100)}`);
+    return parts.join(' | ');
+  }
+  
+  return `${code}: ${message}`;
+}
+
 function normalizeSearchResults(raw: any): NormalizedSearchItem[] {
   const list = Array.isArray(raw?.items) ? raw.items : Array.isArray(raw) ? raw : [];
   return list.slice(0, 5).map((item: any, idx: number) => {
@@ -359,7 +379,7 @@ export async function POST(
             ok: false,
             durationMs,
             inputPreview: buildPreview({ q: command.query }),
-            outputPreview: buildPreview(error?.message || 'error'),
+            outputPreview: buildPreview(formatMcpError(error)),
             at: new Date().toISOString(),
           });
 
@@ -541,7 +561,7 @@ export async function POST(
           ok: false,
           durationMs,
           inputPreview: buildPreview({ item: command.itemNumber, qty }),
-          outputPreview: buildPreview(error?.message || 'error'),
+          outputPreview: buildPreview(formatMcpError(error)),
           at: new Date().toISOString(),
         });
 

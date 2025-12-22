@@ -95,9 +95,9 @@ export default function Home() {
 
   useEffect(() => {
     if (currentConversation?.agentId === 'commerce') {
-      fetch('/api/commerce/health')
+      fetch('/api/commerce/health', { cache: 'no-store' })
         .then((res) => res.json())
-        .then((data) => setCommerceEnabled(data.ok === true && data.disabled !== true))
+        .then((data) => setCommerceEnabled(data.ok === true))
         .catch(() => setCommerceEnabled(false));
     } else {
       setCommerceEnabled(null);
