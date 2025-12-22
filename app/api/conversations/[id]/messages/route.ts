@@ -75,6 +75,26 @@ function formatMcpError(error: any): string {
   return `${code}: ${message}`;
 }
 
+function parseMcpContentJSON(result: any): any {
+  if (result && Array.isArray(result.content)) {
+    for (const entry of result.content) {
+      if (entry?.type === 'text' && typeof entry.text === 'string') {
+        try {
+          return JSON.parse(entry.text);
+        } catch {
+          // continue searching
+        }
+      }
+    }
+  }
+  return result;
+}
+
+function formatProductsPreview(products: Array<{ title?: string }>): string {
+  const sample = products.slice(0, 2).map(p => p.title || '').filter(Boolean);
+  return `ok=true total=${products.length}${sample.length ? ` sample=${JSON.stringify(sample)}` : ''}`;
+}
+
 function normalizeSearchResults(raw: any): NormalizedSearchItem[] {
   const list = Array.isArray(raw?.items) ? raw.items : Array.isArray(raw) ? raw : [];
   return list.slice(0, 5).map((item: any, idx: number) => {
@@ -360,16 +380,32 @@ export async function POST(
         let normalized: NormalizedSearchItem[] = [];
 
         try {
-          const mcpResult = await mcpCallTool('shopify_search_products', { q: command.query });
-          normalized = normalizeSearchResults(mcpResult);
+          const mcpResult = await mcpCallTool('shopify_search_products', { query: command.query, limit: 5 });
+          const parsed = parseMcpContentJSON(mcpResult);
+          const products: any[] = Array.isArray((parsed as any)?.products) ? (parsed as any).products : Array.isArray((parsed as any)?.result?.products) ? (parsed as any).result.products : [];
+          if (!products || products.length === 0) {
+            normalized = [];
+          } else {
+            normalized = products.slice(0, 5).map((p: any, idx: number) => {
+              const variant = Array.isArray(p.variants) && p.variants.length > 0 ? p.variants[0] : undefined;
+              return {
+                title: p.title || `Item ${idx + 1}`,
+                price: typeof variant?.price === 'number' ? variant.price.toString() : variant?.price || p.price || '—',
+                variantId: variant?.id ? String(variant.id) : p.id ? String(p.id) : `variant-${idx + 1}`,
+                available: typeof variant?.inventoryQuantity === 'number' ? variant.inventoryQuantity > 0 : undefined,
+              };
+            });
+          }
 
           const durationMs = Date.now() - mcpStart;
           toolTrace.push({
             tool: 'shopify_search_products',
             ok: true,
             durationMs,
-            inputPreview: buildPreview({ q: command.query }),
-            outputPreview: buildPreview(normalized),
+            inputPreview: buildPreview({ query: command.query }),
+            outputPreview: normalized.length
+              ? formatProductsPreview(normalized.map(p => ({ title: p.title })))
+              : 'ok=true total=0',
             at: new Date().toISOString(),
           });
         } catch (error: any) {
@@ -378,7 +414,7 @@ export async function POST(
             tool: 'shopify_search_products',
             ok: false,
             durationMs,
-            inputPreview: buildPreview({ q: command.query }),
+            inputPreview: buildPreview({ query: command.query }),
             outputPreview: buildPreview(formatMcpError(error)),
             at: new Date().toISOString(),
           });
@@ -389,6 +425,27 @@ export async function POST(
               conversationId: params.id,
               role: 'assistant',
               content: 'MCP tools unavailable right now. Check COMMERCE_ENABLED + MCP_SERVER_URL.',
+              meta: {
+                ...baseMeta,
+                toolTrace,
+                ipHash,
+              },
+            })
+            .returning();
+
+          return commerceResponse({
+            ...assistantMessage,
+            meta: assistantMessage.meta || {},
+          });
+        }
+
+        if (normalized.length === 0) {
+          const [assistantMessage] = await db
+            .insert(messages)
+            .values({
+              conversationId: params.id,
+              role: 'assistant',
+              content: 'No matches found. Try: search hoodie / search beanie',
               meta: {
                 ...baseMeta,
                 toolTrace,
@@ -533,17 +590,18 @@ export async function POST(
 
       try {
         const mcpResult = await mcpCallTool('stripe_create_checkout_session', {
-          items: [
-            {
-              title: item.title,
-              price: item.price,
-              variantId: item.variantId,
-              qty,
-            },
-          ],
+          productName: item.title,
+          price: Number(item.price) || 0,
+          currency: 'usd',
+          successUrl: 'https://example.com/success',
+          cancelUrl: 'https://example.com/cancel',
         });
 
-        checkoutUrl = extractCheckoutUrl(mcpResult);
+        const parsed = parseMcpContentJSON(mcpResult);
+        checkoutUrl =
+          extractCheckoutUrl(parsed) ||
+          extractCheckoutUrl((parsed as any)?.result) ||
+          extractCheckoutUrl(mcpResult);
 
         const durationMs = Date.now() - mcpStart;
         toolTrace.push({
@@ -551,7 +609,7 @@ export async function POST(
           ok: true,
           durationMs,
           inputPreview: buildPreview({ item: command.itemNumber, qty }),
-          outputPreview: buildPreview(checkoutUrl || mcpResult),
+          outputPreview: buildPreview(checkoutUrl ? 'ok=true checkoutUrl' : 'ok=true but missing checkoutUrl'),
           at: new Date().toISOString(),
         });
       } catch (error: any) {
