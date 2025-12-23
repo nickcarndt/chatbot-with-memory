@@ -282,13 +282,13 @@ function HomeContent() {
       const assistantMessage: Message = await response.json();
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Refresh conversation to get updated title
+      // Refresh conversation to get updated title (preserve messages)
       const convResponse = await fetch(`/api/conversations/${currentConversation.id}`);
       if (convResponse.ok) {
         const updatedConv = await convResponse.json();
-        setCurrentConversation(updatedConv);
+        setCurrentConversation(prev => prev ? { ...updatedConv, messages: prev.messages } : updatedConv);
         setConversations(prev =>
-          prev.map(c => (c.id === currentConversation.id ? updatedConv : c))
+          prev.map(c => (c.id === currentConversation.id ? { ...updatedConv, messages: c.messages } : c))
         );
       }
     } catch (error) {
@@ -437,6 +437,7 @@ function HomeContent() {
                         { length: Math.min(4, mostRecentSearchResults.length) },
                         (_, i) => ({
                           label: `▶ Buy item ${i + 1} (qty 1)`,
+                          displayText: `Buy item ${i + 1} (qty 1)`,
                           command: `checkout ${i + 1} qty 1`,
                           autoSend: true,
                         })
@@ -453,6 +454,7 @@ function HomeContent() {
                           const query = words.slice(0, 2).join(' ') || item.title.toLowerCase().split(/\s+/).slice(0, 2).join(' ');
                           return {
                             label: `Search: ${item.title.split(/\s+/).slice(0, 2).join(' ')}`,
+                            displayText: `Search: ${item.title.split(/\s+/).slice(0, 2).join(' ')}`,
                             command: `search ${query}`,
                             autoSend: false,
                           };
@@ -464,9 +466,9 @@ function HomeContent() {
                     } else {
                       // Default discovery chips
                       return [
-                        { label: 'Search: Hoodie', command: 'search hoodie', autoSend: false },
-                        { label: 'Search: Beanie', command: 'search beanie', autoSend: false },
-                        { label: 'Search: T-Shirt', command: 'search t-shirt', autoSend: false },
+                        { label: 'Search: Hoodie', displayText: 'Search: Hoodie', command: 'search hoodie', autoSend: false },
+                        { label: 'Search: Beanie', displayText: 'Search: Beanie', command: 'search beanie', autoSend: false },
+                        { label: 'Search: T-Shirt', displayText: 'Search: T-Shirt', command: 'search t-shirt', autoSend: false },
                       ];
                     }
                   })().map((chip) => (
@@ -474,7 +476,7 @@ function HomeContent() {
                       key={chip.command}
                       onClick={() => {
                         if (chip.autoSend) {
-                          sendMessage(chip.command, chip.label);
+                          sendMessage(chip.command, chip.displayText || chip.label);
                         } else {
                           composerRef.current?.setValue(chip.command);
                         }
