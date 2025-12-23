@@ -71,24 +71,27 @@ flowchart LR
 
   subgraph UI["Next.js App (Vercel)"]
     direction LR
-    C["Client UI<br/>(Chat + Sidebar + Inspector)"] --> API["App Router API Routes<br/>(Serverless / Node.js)"]
+    C["Client UI<br/>(Chat + Sidebar + Inspector)"] --> API["App Router API Routes<br/>(Node.js Serverless)"]
     MW["Middleware<br/>Request ID"] --> API
     API --> LOGS["Structured Logs<br/>(Vercel Logs)"]
   end
 
-  API --> DB[("Neon Postgres<br/>Drizzle ORM<br/>(messages + meta)")]
-  API --> LLM["OpenAI API"]
-
-  subgraph MCPFLOW["Commerce tool flow (MCP)"]
+  subgraph MCPFLOW["Tool flow (MCP)"]
     direction LR
-    API --> MCPCLIENT["MCP Client<br/>(JSON-RPC over HTTP/SSE)"]
+    API --- SPACER[" "]:::spacer --- MCPCLIENT["MCP Client<br/>(JSON-RPC over HTTP/SSE)"]
+    API --> MCPCLIENT
     MCPCLIENT --> MCPSERVER["MCP Server<br/>(Vercel)"]
     MCPSERVER --> SHOPIFY["Shopify API"]
     MCPSERVER --> STRIPE["Stripe Checkout<br/>(Test mode)"]
     MCPSERVER -->|tool results| MCPCLIENT
   end
 
+  API --> DB[("Neon Postgres<br/>Drizzle ORM<br/>(messages + meta)")]
+  API --> LLM["OpenAI API"]
+
   DB -->|messages + meta| C
+
+  classDef spacer fill:transparent,stroke:transparent,color:transparent
 ```
 
 **Tech Stack:**
@@ -174,4 +177,4 @@ npm run smoke      # End-to-end smoke tests
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
