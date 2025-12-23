@@ -76,7 +76,7 @@ flowchart LR
     API --> LOGS["Structured Logs<br/>(Vercel Logs)"]
   end
 
-  API --> DB[("Neon Postgres<br/>Drizzle ORM")]
+  API --> DB[("Neon Postgres<br/>Drizzle ORM<br/>(messages + meta)")]
   API --> LLM["OpenAI API"]
 
   subgraph MCPFLOW["Commerce tool flow (MCP)"]
@@ -85,10 +85,9 @@ flowchart LR
     MCPCLIENT --> MCPSERVER["MCP Server<br/>(Vercel)"]
     MCPSERVER --> SHOPIFY["Shopify API"]
     MCPSERVER --> STRIPE["Stripe Checkout<br/>(Test mode)"]
+    MCPSERVER -->|tool results| MCPCLIENT
   end
 
-  API --> TRACE["Message meta<br/>(toolTrace, lastSearchResults)"]
-  TRACE --> C
   DB -->|messages + meta| C
 ```
 
