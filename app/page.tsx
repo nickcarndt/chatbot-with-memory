@@ -175,7 +175,7 @@ function HomeContent() {
     } else {
       setMessages([]);
     }
-  }, [currentConversation]);
+  }, [currentConversation?.id]);
 
   useEffect(() => {
     if (currentConversation?.agentId === 'commerce') {
@@ -282,14 +282,22 @@ function HomeContent() {
       const assistantMessage: Message = await response.json();
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Refresh conversation to get updated title (preserve messages)
+      // Refresh conversation to get updated title (do NOT overwrite local messages)
       const convResponse = await fetch(`/api/conversations/${currentConversation.id}`);
       if (convResponse.ok) {
         const updatedConv = await convResponse.json();
-        setCurrentConversation(prev => prev ? { ...updatedConv, messages: prev.messages } : updatedConv);
-        setConversations(prev =>
-          prev.map(c => (c.id === currentConversation.id ? { ...updatedConv, messages: c.messages } : c))
-        );
+        const nextTitle = updatedConv?.title;
+
+        if (typeof nextTitle === 'string' && nextTitle.length > 0) {
+          setCurrentConversation(prev => {
+            if (!prev) return updatedConv;
+            // Preserve existing messages to prevent overwriting local state
+            return { ...prev, title: nextTitle, messages: prev.messages };
+          });
+          setConversations(prev =>
+            prev.map(c => (c.id === currentConversation.id ? { ...c, title: nextTitle } : c))
+          );
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);
