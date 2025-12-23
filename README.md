@@ -1,12 +1,13 @@
 # Chatbot with Memory
 
-Full-stack AI chatbot with persistent conversations, department-routed system prompts, and request-level debugging via Inspector. Built for applied AI systems requiring observability, prompt routing, and post-hoc analysis.
+Full-stack AI chatbot with persistent conversations, multi-agent routing, and request-level debugging via Inspector. Built for applied AI systems requiring observability, prompt routing, and post-hoc analysis.
 
-**Live demo:** [chatbot-with-memory-ochre.vercel.app](https://chatbot-with-memory-ochre.vercel.app) (protected)
+**Live demo:** [chatbot-with-memory-ochre.vercel.app](https://chatbot-with-memory-ochre.vercel.app)
 
 ## Highlights
 
-- **Department Agents** — Prompt routing per conversation (Sales/Support/Engineering/Executive)
+- **Multi-Agent Routing** — Prompt routing per conversation by role (Sales/Support/Engineering/Executive)
+- **Commerce Agent (MCP Tools)** — Shopify product search + Stripe Checkout (test mode) via MCP, with tool trace captured per message in Inspector. MCP server: https://mcp-partner-integration-demo.vercel.app
 - **Persistent Memory** — Postgres-backed conversations and message history
 - **Inspector Drawer** — Request ID, latency, model, and token usage per response
 - **Structured Logging** — Request tracing with `request_id` correlation to Vercel logs
@@ -15,15 +16,15 @@ Full-stack AI chatbot with persistent conversations, department-routed system pr
 <p align="center">
   <img src="screenshots/demo.png" width="920" alt="Chatbot with Memory — Agents + Inspector" />
   <br/>
-  <sub><b>Main interface</b> — department agents + persistent conversations + Inspector drawer.</sub>
+  <sub><b>Main interface</b> — multi-agent routing + persistent conversations + Inspector drawer.</sub>
 </p>
 
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="screenshots/agents.png" width="420" alt="Department agent selector" />
+      <img src="screenshots/agents.png" width="420" alt="Multi-agent routing selector" />
       <br/>
-      <sub><b>Agents</b> — route system prompts by department (Sales/Support/Engineering/Executive).</sub>
+      <sub><b>Agents</b> — route system prompts by role (Sales/Support/Engineering/Executive).</sub>
     </td>
     <td align="center" width="50%">
       <img src="screenshots/inspector.png" width="420" alt="Inspector drawer with request metadata" />
@@ -49,7 +50,7 @@ Full-stack AI chatbot with persistent conversations, department-routed system pr
 
 ## Why This Matters
 
-- **Department Agents** → Prompt routing per org role enables specialized responses (sales discovery, support troubleshooting, engineering tradeoffs)
+- **Multi-Agent Routing** → Prompt routing per org role enables specialized responses (sales discovery, support troubleshooting, engineering tradeoffs)
 - **Inspector** → Request tracing via `request_id` enables production debugging and latency analysis
 - **Persisted Metadata** → Post-hoc analysis of token usage, response times, and model performance over time
 
@@ -75,16 +76,20 @@ flowchart LR
     API --> LOGS["Structured Logs<br/>(Vercel Logs)"]
   end
 
-  subgraph APIROUTES["API Surface"]
-    direction TB
-    H["/GET /api/health/"]
-    L["/GET|POST|DELETE /api/conversations/"]
-    M["/POST /api/conversations/:id/messages/"]
+  API --> DB[("Neon Postgres<br/>Drizzle ORM")]
+  API --> LLM["OpenAI API"]
+
+  subgraph MCPFLOW["Commerce tool flow (MCP)"]
+    direction LR
+    API --> MCPCLIENT["MCP Client<br/>(JSON-RPC over HTTP/SSE)"]
+    MCPCLIENT --> MCPSERVER["MCP Server<br/>(Vercel)"]
+    MCPSERVER --> SHOPIFY["Shopify API"]
+    MCPSERVER --> STRIPE["Stripe Checkout<br/>(Test mode)"]
   end
 
-  API --> APIROUTES
-  APIROUTES --> DB[("Neon Postgres<br/>Drizzle ORM")]
-  M --> LLM["OpenAI API"]
+  API --> TRACE["Message meta<br/>(toolTrace, lastSearchResults)"]
+  TRACE --> C
+  DB -->|messages + meta| C
 ```
 
 **Tech Stack:**
@@ -114,13 +119,13 @@ Open [http://localhost:3000](http://localhost:3000)
 ## Commerce (MCP) demo
 
 - Env: set `COMMERCE_ENABLED=true` and `MCP_SERVER_URL` to your MCP server URL (if it lacks `/mcp`, the client appends it).
-- Stripe runs in test mode.
-- Commerce agent shows a neutral banner + prompt chips (prefill) for common actions.
+- MCP server: https://mcp-partner-integration-demo.vercel.app (the client appends /mcp if missing)
 - Script:
   1. Select Commerce agent.
   2. Send: `search hoodies under $80`.
-  3. Send: `checkout 1 qty 1`.
-  4. Open Inspector → Tool Trace + `request_id`.
+  3. Click: `▶ Buy item 1 (qty 1)`.
+  4. Complete Stripe test payment → redirect back shows the success banner.
+  5. Open Inspector → Tool Trace + `request_id`.
 
 ## Deploy (Vercel)
 
