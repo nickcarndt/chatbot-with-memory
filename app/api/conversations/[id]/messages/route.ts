@@ -107,6 +107,68 @@ function normalizeSearchQuery(raw: string): string {
   return trimmed;
 }
 
+function parseItemNumber(text: string): number | null {
+  const lower = text.toLowerCase();
+  if (lower.includes('first')) return 1;
+  if (lower.includes('second')) return 2;
+  if (lower.includes('third')) return 3;
+  const numMatch = lower.match(/(?:item\s*|#\s*|^|\s)(\d+)/);
+  if (numMatch) {
+    const n = parseInt(numMatch[1], 10);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function parseQty(text: string): number | null {
+  const lower = text.toLowerCase();
+  const qtyMatch = lower.match(/(?:qty|quantity)\s*(\d+)/);
+  if (qtyMatch) return parseInt(qtyMatch[1], 10);
+  const xMatch = lower.match(/(\d+)\s*x|x\s*(\d+)/);
+  if (xMatch) {
+    const n = parseInt(xMatch[1] || xMatch[2], 10);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function parseCommerceCommandFreeform(content: string): { type: 'search'; query: string } | { type: 'checkout'; itemNumber: number; qty: number; needsConfirm: boolean } | { type: 'confirm' } | null {
+  const text = content.trim();
+  if (!text) return null;
+  const lower = text.toLowerCase();
+
+  // Confirmation
+  if (/(^|\s)(confirm|yes|proceed|do it|okay|ok)(\s|$)/i.test(text)) {
+    return { type: 'confirm' };
+  }
+
+  // Checkout intent
+  const isCheckout = /(checkout|buy|purchase|order)/i.test(text);
+  if (isCheckout) {
+    const itemNumber = parseItemNumber(text);
+    const qtyRaw = parseQty(text);
+    const qty = Math.max(1, Math.min(3, qtyRaw ?? 1));
+    if (itemNumber && itemNumber > 0) {
+      return { type: 'checkout', itemNumber, qty, needsConfirm: !/(confirm|yes|proceed|do it)/i.test(text) };
+    }
+  }
+
+  // Search intent
+  const isSearch = /(search|find|show|browse|look up)/i.test(text);
+  if (isSearch || text.length > 2) {
+    let query = text;
+    query = query.replace(/^(search|find|show|browse|look up)\s*/i, '');
+    query = query.replace(/^(for\s+)/i, '');
+    query = normalizeSearchQuery(query);
+    if (query.length === 0) {
+      query = text;
+    }
+    return { type: 'search', query };
+  }
+
+  return null;
+}
+
 function normalizeSearchResults(raw: any): NormalizedSearchItem[] {
   const list = Array.isArray(raw?.items) ? raw.items : Array.isArray(raw) ? raw : [];
   return list.slice(0, 5).map((item: any, idx: number) => {
@@ -338,7 +400,7 @@ export async function POST(
         });
       }
 
-      const command = parseCommerceCommand(content);
+      const command = parseCommerceCommandFreeform(content);
 
       if (!command) {
         const [assistantMessage] = await db
@@ -506,7 +568,37 @@ export async function POST(
         });
       }
 
-      // checkout flow
+      // checkout flow with confirmation and pending
+      // If command is confirm, attempt to load pendingCheckout from last assistant message
+      let pendingCheckout: { itemNumber: number; qty: number; title: string; price: string } | null = null;
+      if (command.type === 'confirm') {
+        const lastPending = await db
+          .select()
+          .from(messages)
+          .where(
+            sql`${messages.conversationId} = ${params.id} and ${messages.role} = 'assistant' and ${messages.meta} ? 'pendingCheckout'`
+          )
+          .orderBy(desc(messages.createdAt))
+          .limit(1);
+        pendingCheckout = (lastPending[0]?.meta as any)?.pendingCheckout || null;
+        if (!pendingCheckout) {
+          const [assistantMessage] = await db
+            .insert(messages)
+            .values({
+              conversationId: params.id,
+              role: 'assistant',
+              content: 'No pending checkout. Please choose an item first (e.g., buy item 1 qty 1).',
+              meta: baseMeta,
+            })
+            .returning();
+
+          return commerceResponse({
+            ...assistantMessage,
+            meta: assistantMessage.meta || {},
+          });
+        }
+      }
+
       const lastSearch = await db
         .select()
         .from(messages)
@@ -535,7 +627,18 @@ export async function POST(
         });
       }
 
-      const item = lastSearchResults[command.itemNumber - 1];
+      let checkoutItemNumber: number;
+      let checkoutQty: number;
+      if (command.type === 'confirm') {
+        checkoutItemNumber = pendingCheckout!.itemNumber;
+        checkoutQty = pendingCheckout!.qty;
+      } else {
+        checkoutItemNumber = (command as any).itemNumber;
+        checkoutQty = (command as any).qty;
+      }
+
+      const qty = Math.max(1, Math.min(3, checkoutQty));
+      const item = lastSearchResults[checkoutItemNumber - 1];
       if (!item) {
         const [assistantMessage] = await db
           .insert(messages)
@@ -553,7 +656,30 @@ export async function POST(
         });
       }
 
-      const qty = Math.max(1, Math.min(3, command.qty));
+      if (command.type !== 'confirm' && command.needsConfirm) {
+        const [assistantMessage] = await db
+          .insert(messages)
+          .values({
+            conversationId: params.id,
+            role: 'assistant',
+            content: `About to create a Stripe test checkout for "${item.title}" ($${item.price}) x${qty}. Reply "confirm" to proceed.`,
+            meta: {
+              ...baseMeta,
+              pendingCheckout: {
+                itemNumber: command.itemNumber,
+                qty,
+                title: item.title,
+                price: item.price,
+              },
+            },
+          })
+          .returning();
+
+        return commerceResponse({
+          ...assistantMessage,
+          meta: assistantMessage.meta || {},
+        });
+      }
 
       const mcpStart = Date.now();
       let toolTrace: ToolTraceEntry[] = [];
@@ -579,7 +705,7 @@ export async function POST(
           tool: 'stripe_create_checkout_session',
           ok: true,
           durationMs,
-          inputPreview: buildPreview({ item: command.itemNumber, qty }),
+          inputPreview: buildPreview({ item: checkoutItemNumber, qty }),
           outputPreview: buildPreview(checkoutUrl ? 'ok=true checkoutUrl' : 'ok=true but missing checkoutUrl'),
           at: new Date().toISOString(),
         });
@@ -589,7 +715,7 @@ export async function POST(
           tool: 'stripe_create_checkout_session',
           ok: false,
           durationMs,
-          inputPreview: buildPreview({ item: command.itemNumber, qty }),
+          inputPreview: buildPreview({ item: checkoutItemNumber, qty }),
           outputPreview: buildPreview(formatMcpError(error)),
           at: new Date().toISOString(),
         });
@@ -683,9 +809,11 @@ export async function POST(
       const durationMs = Date.now() - t0;
 
       if (!assistantContent.includes('[Open Stripe Checkout]')) {
-        assistantContent = `✅ Stripe checkout created (test mode)\n\n[Open Stripe Checkout](${checkoutUrl})`;
+        assistantContent = `✅ Stripe checkout created (test mode)\n\n[Open Stripe Checkout](${checkoutUrl})\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
       } else if (!assistantContent.includes('✅')) {
-        assistantContent = `✅ Stripe checkout created (test mode)\n\n${assistantContent}`;
+        assistantContent = `✅ Stripe checkout created (test mode)\n\n${assistantContent}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
+      } else if (!assistantContent.includes('Test mode: use card')) {
+        assistantContent = `${assistantContent}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
       }
 
       const [assistantMessage] = await db
