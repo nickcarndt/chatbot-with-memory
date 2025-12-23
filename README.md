@@ -100,6 +100,7 @@ flowchart LR
 ```bash
 cp .env.example .env
 # Edit .env: DATABASE_URL, OPENAI_API_KEY
+# Note: Copy .env.example → .env (never commit .env)
 
 npm install
 npm run db:push
