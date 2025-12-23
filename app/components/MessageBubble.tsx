@@ -1,5 +1,7 @@
 'use client';
 
+
+import { useState } from 'react';
 import { Markdown } from './Markdown';
 
 interface MessageBubbleProps {
@@ -23,11 +25,31 @@ function extractCheckoutUrl(content: string): string | null {
 
 function StripeCheckoutMessage({ content }: { content: string }) {
   const checkoutUrl = extractCheckoutUrl(content);
+  const [copied, setCopied] = useState(false);
   
   if (!checkoutUrl) {
     // Fallback to normal markdown rendering if URL extraction fails
     return <Markdown>{content}</Markdown>;
   }
+
+  const handleCopyCardNumber = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText('4242424242424242');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = '4242424242424242';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -40,7 +62,7 @@ function StripeCheckoutMessage({ content }: { content: string }) {
           href={checkoutUrl}
           target="_blank"
           rel="noreferrer noopener"
-          className="text-sm text-slate-900 underline hover:text-slate-700 transition-colors inline-flex items-center gap-1"
+          className="text-sm text-blue-600 no-underline hover:underline transition-colors inline-flex items-center gap-1"
           onClick={(e) => e.stopPropagation()}
         >
           Open Stripe Checkout ↗
@@ -50,7 +72,16 @@ function StripeCheckoutMessage({ content }: { content: string }) {
       <div className="space-y-2 text-sm text-slate-700">
         <div className="font-medium">Test mode note: You can use the following test card details for payment:</div>
         <ul className="list-disc list-inside space-y-1 ml-2">
-          <li>Card number: 4242424242424242</li>
+          <li className="flex items-center gap-2">
+            <span>Card number: 4242424242424242</span>
+            <button
+              onClick={handleCopyCardNumber}
+              className="text-xs px-2 py-0.5 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
+              title="Copy card number"
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </li>
           <li>Expiry date: Any future date</li>
           <li>CVC: Any 3 digits</li>
         </ul>

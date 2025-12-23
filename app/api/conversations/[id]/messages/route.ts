@@ -624,12 +624,13 @@ export async function POST(
       let checkoutUrl: string | null = null;
 
       try {
+        const origin = request.nextUrl.origin;
         const mcpResult = await mcpCallTool('stripe_create_checkout_session', {
           productName: item.title,
           price: Number(item.price) || 0,
           currency: 'usd',
-          successUrl: 'https://example.com/success',
-          cancelUrl: 'https://example.com/cancel',
+          successUrl: `${origin}/?checkout=success`,
+          cancelUrl: `${origin}/?checkout=cancel`,
         });
 
         const parsed = parseMcpContentJSON(mcpResult);

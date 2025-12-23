@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { AGENT_IDS, AGENT_NAMES, type AgentId } from '@/lib/agents';
 import { Sidebar } from './components/Sidebar';
@@ -39,7 +40,8 @@ interface Message {
   };
 }
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -51,7 +53,11 @@ export default function Home() {
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [inspectorTab, setInspectorTab] = useState<'conversation' | 'message'>('conversation');
   const [commerceEnabled, setCommerceEnabled] = useState<boolean | null>(null);
+  const [checkoutBannerDismissed, setCheckoutBannerDismissed] = useState(false);
   const composerRef = useRef<ComposerRef>(null);
+  
+  const checkoutStatus = searchParams.get('checkout');
+  const showCheckoutBanner = checkoutStatus && !checkoutBannerDismissed;
   const hasCommerceSearchResults =
     currentConversation?.agentId === 'commerce' &&
     messages.some(m => m.role === 'assistant' && Array.isArray((m.meta as any)?.lastSearchResults) && ((m.meta as any).lastSearchResults as any[]).length > 0);
@@ -312,6 +318,25 @@ export default function Home() {
               onEvalModeToggle={() => setEvalMode(prev => !prev)}
             />
 
+            {showCheckoutBanner && (
+              <div className="mx-6 mt-4 mb-2 rounded-lg border px-3 py-2 text-sm flex items-center justify-between gap-2 bg-blue-50 border-blue-200 text-blue-900">
+                <span>
+                  {checkoutStatus === 'success' 
+                    ? '✅ Payment successful! Thank you for your purchase.'
+                    : 'ℹ️ Checkout was cancelled.'}
+                </span>
+                <button
+                  onClick={() => setCheckoutBannerDismissed(true)}
+                  className="text-blue-700 hover:text-blue-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-0.5"
+                  aria-label="Dismiss"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
             {currentConversation.agentId === 'commerce' && (
               <div className="mx-6 mt-4 mb-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                 {commerceEnabled === true
@@ -366,7 +391,11 @@ export default function Home() {
                       // Contextual chips: checkout + refine suggestions
                       const checkoutChips = Array.from(
                         { length: Math.min(4, mostRecentSearchResults.length) },
-                        (_, i) => `checkout ${i + 1} qty 1`
+                        (_, i) => ({
+                          label: `Buy item ${i + 1} (qty 1)`,
+                          command: `checkout ${i + 1} qty 1`,
+                          autoSend: true,
+                        })
                       );
                       
                       // Extract up to 2 refine suggestions from item titles
@@ -377,24 +406,38 @@ export default function Home() {
                           const words = item.title.toLowerCase().split(/\s+/).filter(w => 
                             w.length > 2 && !['the', 'and', 'for', 'with', 'from'].includes(w)
                           );
-                          return words.slice(0, 2).join(' ') || item.title.toLowerCase().split(/\s+/).slice(0, 2).join(' ');
+                          const query = words.slice(0, 2).join(' ') || item.title.toLowerCase().split(/\s+/).slice(0, 2).join(' ');
+                          return {
+                            label: `Search: ${item.title.split(/\s+/).slice(0, 2).join(' ')}`,
+                            command: `search ${query}`,
+                            autoSend: false,
+                          };
                         })
-                        .filter((title, idx, arr) => arr.indexOf(title) === idx) // dedupe
-                        .slice(0, 2)
-                        .map(title => `search ${title}`);
+                        .filter((chip, idx, arr) => arr.findIndex(c => c.command === chip.command) === idx) // dedupe by command
+                        .slice(0, 2);
                       
                       return [...checkoutChips, ...refineChips];
                     } else {
                       // Default discovery chips
-                      return ['search hoodie', 'search beanie', 'search t-shirt'];
+                      return [
+                        { label: 'Search: Hoodie', command: 'search hoodie', autoSend: false },
+                        { label: 'Search: Beanie', command: 'search beanie', autoSend: false },
+                        { label: 'Search: T-Shirt', command: 'search t-shirt', autoSend: false },
+                      ];
                     }
-                  })().map((text) => (
+                  })().map((chip) => (
                     <button
-                      key={text}
-                      onClick={() => composerRef.current?.setValue(text)}
+                      key={chip.command}
+                      onClick={() => {
+                        if (chip.autoSend) {
+                          sendMessage(chip.command);
+                        } else {
+                          composerRef.current?.setValue(chip.command);
+                        }
+                      }}
                       className="px-3 py-1 text-xs rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                     >
-                      {text}
+                      {chip.label}
                     </button>
                   ))}
                 </div>
@@ -435,5 +478,17 @@ export default function Home() {
         currentAgent={selectedAgent}
       />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen bg-slate-50 items-center justify-center">
+        <p className="text-sm text-slate-500">Loading...</p>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
