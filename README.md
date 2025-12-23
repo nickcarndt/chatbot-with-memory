@@ -66,32 +66,29 @@ Full-stack AI chatbot with persistent conversations, multi-agent routing, and re
 ## Architecture
 
 ```mermaid
-flowchart LR
-  U[User / Browser] -->|HTTPS| UI
+flowchart TB
+  U[User / Browser] -->|HTTPS| C["Client UI<br/>(Chat + Sidebar + Inspector)"]
 
   subgraph UI["Next.js App (Vercel)"]
-    direction LR
-    C["Client UI<br/>(Chat + Sidebar + Inspector)"] --> API["App Router API Routes<br/>(Node.js Serverless)"]
+    direction TB
+    C --> API["App Router API Routes<br/>(Node.js Serverless)"]
     MW["Middleware<br/>Request ID"] --> API
     API --> LOGS["Structured Logs<br/>(Vercel Logs)"]
   end
 
+  API --> DB[("Neon Postgres<br/>Drizzle ORM<br/>(messages + meta)")]
+  API --> LLM["OpenAI API"]
+
   subgraph MCPFLOW["Tool flow (MCP)"]
     direction LR
-    API --- SPACER[" "]:::spacer --- MCPCLIENT["MCP Client<br/>(JSON-RPC over HTTP/SSE)"]
-    API --> MCPCLIENT
+    API --> MCPCLIENT["MCP Client<br/>(JSON-RPC over HTTP/SSE)"]
     MCPCLIENT --> MCPSERVER["MCP Server<br/>(Vercel)"]
     MCPSERVER --> SHOPIFY["Shopify API"]
     MCPSERVER --> STRIPE["Stripe Checkout<br/>(Test mode)"]
     MCPSERVER -->|tool results| MCPCLIENT
   end
 
-  API --> DB[("Neon Postgres<br/>Drizzle ORM<br/>(messages + meta)")]
-  API --> LLM["OpenAI API"]
-
   DB -->|messages + meta| C
-
-  classDef spacer fill:transparent,stroke:transparent,color:transparent
 ```
 
 **Tech Stack:**
