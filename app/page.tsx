@@ -95,12 +95,12 @@ function HomeContent() {
     return saved && AGENT_IDS.includes(saved) ? saved : 'general';
   });
   
-  // Set agent to commerce if checkout param exists and no agent is persisted
+  // Set agent to commerce if checkout param exists and no valid agent is persisted
   useEffect(() => {
     const checkoutStatus = searchParams.get('checkout');
     if (checkoutStatus) {
       const saved = localStorage.getItem('selected_agent') as AgentId | null;
-      if (!saved) {
+      if (!saved || !AGENT_IDS.includes(saved)) {
         setSelectedAgent('commerce');
       }
     }
