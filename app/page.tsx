@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { AGENT_IDS, AGENT_NAMES, type AgentId } from '@/lib/agents';
 import { Sidebar } from './components/Sidebar';
@@ -40,24 +40,71 @@ interface Message {
   };
 }
 
+function CheckoutBanner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const checkoutStatus = searchParams.get('checkout');
+  
+  if (!checkoutStatus) return null;
+  
+  const handleDismiss = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('checkout');
+    const newUrl = params.toString() ? `/?${params.toString()}` : '/';
+    router.replace(newUrl);
+  };
+
+  return (
+    <div className="mx-6 mt-4 mb-2 rounded-lg border px-3 py-2 text-sm flex items-center justify-between gap-2 bg-blue-50 border-blue-200 text-blue-900">
+      <span>
+        {checkoutStatus === 'success' 
+          ? '✅ Payment successful! Thank you for your purchase.'
+          : 'ℹ️ Checkout was cancelled.'}
+      </span>
+      <button
+        onClick={handleDismiss}
+        className="text-blue-700 hover:text-blue-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-0.5"
+        aria-label="Dismiss"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 function HomeContent() {
   const searchParams = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<AgentId>('general');
   const [error, setError] = useState<string | null>(null);
   const [evalMode, setEvalMode] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [inspectorTab, setInspectorTab] = useState<'conversation' | 'message'>('conversation');
   const [commerceEnabled, setCommerceEnabled] = useState<boolean | null>(null);
-  const [checkoutBannerDismissed, setCheckoutBannerDismissed] = useState(false);
   const composerRef = useRef<ComposerRef>(null);
   
-  const checkoutStatus = searchParams.get('checkout');
-  const showCheckoutBanner = checkoutStatus && !checkoutBannerDismissed;
+  // Initialize selectedAgent with persistence
+  const [selectedAgent, setSelectedAgent] = useState<AgentId>(() => {
+    if (typeof window === 'undefined') return 'general';
+    const saved = localStorage.getItem('selected_agent') as AgentId | null;
+    return saved && AGENT_IDS.includes(saved) ? saved : 'general';
+  });
+  
+  // Set agent to commerce if checkout param exists and no agent is persisted
+  useEffect(() => {
+    const checkoutStatus = searchParams.get('checkout');
+    if (checkoutStatus) {
+      const saved = localStorage.getItem('selected_agent') as AgentId | null;
+      if (!saved) {
+        setSelectedAgent('commerce');
+      }
+    }
+  }, [searchParams]);
   const hasCommerceSearchResults =
     currentConversation?.agentId === 'commerce' &&
     messages.some(m => m.role === 'assistant' && Array.isArray((m.meta as any)?.lastSearchResults) && ((m.meta as any).lastSearchResults as any[]).length > 0);
@@ -98,6 +145,10 @@ function HomeContent() {
   useEffect(() => {
     localStorage.setItem('inspector_tab', inspectorTab);
   }, [inspectorTab]);
+
+  useEffect(() => {
+    localStorage.setItem('selected_agent', selectedAgent);
+  }, [selectedAgent]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -309,6 +360,10 @@ function HomeContent() {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0 md:min-w-0">
+        <Suspense fallback={null}>
+          <CheckoutBanner />
+        </Suspense>
+        
         {currentConversation ? (
           <>
             <ChatHeader
@@ -317,25 +372,6 @@ function HomeContent() {
               evalMode={evalMode}
               onEvalModeToggle={() => setEvalMode(prev => !prev)}
             />
-
-            {showCheckoutBanner && (
-              <div className="mx-6 mt-4 mb-2 rounded-lg border px-3 py-2 text-sm flex items-center justify-between gap-2 bg-blue-50 border-blue-200 text-blue-900">
-                <span>
-                  {checkoutStatus === 'success' 
-                    ? '✅ Payment successful! Thank you for your purchase.'
-                    : 'ℹ️ Checkout was cancelled.'}
-                </span>
-                <button
-                  onClick={() => setCheckoutBannerDismissed(true)}
-                  className="text-blue-700 hover:text-blue-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-0.5"
-                  aria-label="Dismiss"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            )}
 
             {currentConversation.agentId === 'commerce' && (
               <div className="mx-6 mt-4 mb-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
