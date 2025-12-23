@@ -55,6 +55,22 @@ export default function Home() {
   const hasCommerceSearchResults =
     currentConversation?.agentId === 'commerce' &&
     messages.some(m => m.role === 'assistant' && Array.isArray((m.meta as any)?.lastSearchResults) && ((m.meta as any).lastSearchResults as any[]).length > 0);
+  
+  // Find most recent search results for contextual chips
+  const mostRecentSearchResults = currentConversation?.agentId === 'commerce'
+    ? (() => {
+        for (let i = messages.length - 1; i >= 0; i--) {
+          const msg = messages[i];
+          if (msg.role === 'assistant' && Array.isArray((msg.meta as any)?.lastSearchResults)) {
+            const results = (msg.meta as any).lastSearchResults as Array<{ title: string; price: string }>;
+            if (results && results.length > 0) {
+              return results;
+            }
+          }
+        }
+        return null;
+      })()
+    : null;
 
   useEffect(() => {
     loadConversations();
@@ -345,12 +361,34 @@ export default function Home() {
               <div className="px-6 pb-2">
                 <div className="text-xs text-slate-500 mb-1">Try:</div>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    'search hoodie',
-                    'search beanie',
-                    'search t-shirt',
-                    ...(hasCommerceSearchResults ? ['checkout 1 qty 1'] : []),
-                  ].map((text) => (
+                  {(() => {
+                    if (mostRecentSearchResults && mostRecentSearchResults.length > 0) {
+                      // Contextual chips: checkout + refine suggestions
+                      const checkoutChips = Array.from(
+                        { length: Math.min(4, mostRecentSearchResults.length) },
+                        (_, i) => `checkout ${i + 1} qty 1`
+                      );
+                      
+                      // Extract up to 2 refine suggestions from item titles
+                      const refineChips = mostRecentSearchResults
+                        .slice(0, 2)
+                        .map(item => {
+                          // Extract key words from title (lowercase, remove common words)
+                          const words = item.title.toLowerCase().split(/\s+/).filter(w => 
+                            w.length > 2 && !['the', 'and', 'for', 'with', 'from'].includes(w)
+                          );
+                          return words.slice(0, 2).join(' ') || item.title.toLowerCase().split(/\s+/).slice(0, 2).join(' ');
+                        })
+                        .filter((title, idx, arr) => arr.indexOf(title) === idx) // dedupe
+                        .slice(0, 2)
+                        .map(title => `search ${title}`);
+                      
+                      return [...checkoutChips, ...refineChips];
+                    } else {
+                      // Default discovery chips
+                      return ['search hoodie', 'search beanie', 'search t-shirt'];
+                    }
+                  })().map((text) => (
                     <button
                       key={text}
                       onClick={() => composerRef.current?.setValue(text)}

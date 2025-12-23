@@ -10,6 +10,55 @@ interface MessageBubbleProps {
   onSelect?: () => void;
 }
 
+function extractCheckoutUrl(content: string): string | null {
+  // Extract URL from markdown link: [Open Stripe Checkout](url)
+  const markdownLinkMatch = content.match(/\[Open Stripe Checkout\]\(([^)]+)\)/);
+  if (markdownLinkMatch && markdownLinkMatch[1]) {
+    return markdownLinkMatch[1];
+  }
+  // Fallback: look for any https:// URL in the content (only if markdown link not found)
+  const urlMatch = content.match(/https?:\/\/[^\s\)\n]+/);
+  return urlMatch ? urlMatch[0] : null;
+}
+
+function StripeCheckoutMessage({ content }: { content: string }) {
+  const checkoutUrl = extractCheckoutUrl(content);
+  
+  if (!checkoutUrl) {
+    // Fallback to normal markdown rendering if URL extraction fails
+    return <Markdown>{content}</Markdown>;
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="text-sm font-medium text-slate-900">
+        ✅ Stripe checkout created (test mode)
+      </div>
+      
+      <div>
+        <a
+          href={checkoutUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="text-sm text-slate-900 underline hover:text-slate-700 transition-colors inline-flex items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Open Stripe Checkout ↗
+        </a>
+      </div>
+      
+      <div className="space-y-2 text-sm text-slate-700">
+        <div className="font-medium">Test mode note: You can use the following test card details for payment:</div>
+        <ul className="list-disc list-inside space-y-1 ml-2">
+          <li>Card number: 4242424242424242</li>
+          <li>Expiry date: Any future date</li>
+          <li>CVC: Any 3 digits</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 export function MessageBubble({ role, content, messageId, isSelected, onSelect }: MessageBubbleProps) {
   if (role === 'user') {
     return (
@@ -21,6 +70,8 @@ export function MessageBubble({ role, content, messageId, isSelected, onSelect }
     );
   }
 
+  const isStripeCheckout = role === 'assistant' && content.startsWith('✅ Stripe checkout created (test mode)');
+
   return (
     <div className="flex justify-start">
       <div
@@ -29,14 +80,16 @@ export function MessageBubble({ role, content, messageId, isSelected, onSelect }
           isSelected
             ? 'border-blue-400 ring-2 ring-blue-200'
             : 'border-slate-200 hover:border-slate-300'
-        }`}
+        } px-4 ${isStripeCheckout ? 'py-2.5' : 'py-3'}`}
       >
-        <div className="px-4 py-3">
-          <div className="text-sm text-slate-900">
+        <div className={isStripeCheckout ? '' : 'text-sm text-slate-900'}>
+          {isStripeCheckout ? (
+            <StripeCheckoutMessage content={content} />
+          ) : (
             <Markdown>{content}</Markdown>
-          </div>
+          )}
         </div>
-        <div className="px-4 pb-2 flex items-center justify-end">
+        <div className="px-4 pb-2 flex items-center justify-end mt-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
