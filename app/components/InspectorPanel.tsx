@@ -31,6 +31,7 @@ interface InspectorPanelProps {
 export function InspectorPanel({ isOpen, selectedMessage, conversationAgentId, messageCount, activeTab, onTabChange, onClose }: InspectorPanelProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const firstFocusableRef = useRef<HTMLButtonElement>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -163,11 +164,13 @@ export function InspectorPanel({ isOpen, selectedMessage, conversationAgentId, m
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(selectedMessage.meta!.requestId!);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 1200);
                         }}
                         className="px-2 py-1 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                         title="Copy Request ID"
                       >
-                        Copy
+                        {copied ? 'Copied!' : 'Copy'}
                       </button>
                     </div>
                   ) : (

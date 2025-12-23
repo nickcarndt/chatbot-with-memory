@@ -13,9 +13,9 @@ import { mcpCallTool } from '@/lib/mcp';
 export const runtime = 'nodejs';
 
 const RATE_LIMITS = {
-  perMinute: 5,
-  perDay: 20,
-  perConversationDay: 10,
+  perMinute: 15,
+  perDay: 200,
+  perConversationDay: 50,
 };
 
 type ToolTraceEntry = {
@@ -151,6 +151,7 @@ function parseCommerceCommandFreeform(content: string): { type: 'search'; query:
     if (itemNumber && itemNumber > 0) {
       return { type: 'checkout', itemNumber, qty, needsConfirm: !/(confirm|yes|proceed|do it)/i.test(text) };
     }
+    // If checkout intent without item number, fall back to search
   }
 
   // Search intent
@@ -434,7 +435,7 @@ export async function POST(
           .values({
             conversationId: params.id,
             role: 'assistant',
-            content: 'Rate limit reached — try again shortly.',
+            content: 'Rate limit reached — try again in ~60s.',
             meta: {
               ...baseMeta,
               ipHash,
@@ -549,7 +550,7 @@ export async function POST(
           .values({
             conversationId: params.id,
             role: 'assistant',
-            content: `✅ Shopify search complete\n${listText}\n\nReply "checkout <n> qty <q>" (test mode).`,
+            content: `✅ Shopify search complete\n${listText}\n\nReply: checkout 1 qty 1 (test mode).`,
             meta: {
               ...baseMeta,
               durationMs,
@@ -662,7 +663,7 @@ export async function POST(
           .values({
             conversationId: params.id,
             role: 'assistant',
-            content: `About to create a Stripe test checkout for "${item.title}" ($${item.price}) x${qty}. Reply "confirm" to proceed.`,
+            content: `About to create a Stripe test checkout for "${item.title}" ($${item.price}) x${qty}. Reply: checkout ${command.itemNumber} qty ${qty} then confirm.`,
             meta: {
               ...baseMeta,
               pendingCheckout: {

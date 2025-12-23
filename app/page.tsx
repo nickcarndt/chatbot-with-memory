@@ -52,6 +52,9 @@ export default function Home() {
   const [inspectorTab, setInspectorTab] = useState<'conversation' | 'message'>('conversation');
   const [commerceEnabled, setCommerceEnabled] = useState<boolean | null>(null);
   const composerRef = useRef<ComposerRef>(null);
+  const hasCommerceSearchResults =
+    currentConversation?.agentId === 'commerce' &&
+    messages.some(m => m.role === 'assistant' && Array.isArray((m.meta as any)?.lastSearchResults) && ((m.meta as any).lastSearchResults as any[]).length > 0);
 
   useEffect(() => {
     loadConversations();
@@ -345,8 +348,8 @@ export default function Home() {
                   {[
                     'search hoodie',
                     'search beanie',
-                    'checkout 1 qty 1',
-                    'checkout 2 qty 2',
+                    'search t-shirt',
+                    ...(hasCommerceSearchResults ? ['checkout 1 qty 1'] : []),
                   ].map((text) => (
                     <button
                       key={text}
