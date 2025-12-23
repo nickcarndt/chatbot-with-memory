@@ -44,12 +44,16 @@ function isValidAgentId(x: string | null): x is AgentId {
   return x !== null && AGENT_IDS.includes(x as AgentId);
 }
 
-function CheckoutBanner() {
+function CheckoutBanner({ selectedAgent, currentConversation }: { selectedAgent: AgentId; currentConversation: Conversation | null }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const checkoutStatus = searchParams.get('checkout');
   
   if (!checkoutStatus) return null;
+  
+  // Only show banner in commerce context
+  const isCommerceContext = selectedAgent === 'commerce' || currentConversation?.agentId === 'commerce' || !currentConversation;
+  if (!isCommerceContext) return null;
   
   const handleDismiss = () => {
     const params = new URLSearchParams(searchParams.toString());
@@ -243,13 +247,13 @@ function HomeContent() {
     }
   };
 
-  const sendMessage = async (messageContent: string) => {
+  const sendMessage = async (messageContent: string, displayText?: string) => {
     if (!messageContent.trim() || !currentConversation || isLoading) return;
 
     const userMessage: Message = {
       id: uuidv4(),
       role: 'user',
-      content: messageContent,
+      content: displayText ?? messageContent,
       createdAt: new Date().toISOString(),
     };
 
@@ -365,7 +369,7 @@ function HomeContent() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0 md:min-w-0">
         <Suspense fallback={null}>
-          <CheckoutBanner />
+          <CheckoutBanner selectedAgent={selectedAgent} currentConversation={currentConversation} />
         </Suspense>
         
         {currentConversation ? (
@@ -432,7 +436,7 @@ function HomeContent() {
                       const checkoutChips = Array.from(
                         { length: Math.min(4, mostRecentSearchResults.length) },
                         (_, i) => ({
-                          label: `Buy item ${i + 1} (qty 1)`,
+                          label: `▶ Buy item ${i + 1} (qty 1)`,
                           command: `checkout ${i + 1} qty 1`,
                           autoSend: true,
                         })
@@ -470,7 +474,7 @@ function HomeContent() {
                       key={chip.command}
                       onClick={() => {
                         if (chip.autoSend) {
-                          sendMessage(chip.command);
+                          sendMessage(chip.command, chip.label);
                         } else {
                           composerRef.current?.setValue(chip.command);
                         }

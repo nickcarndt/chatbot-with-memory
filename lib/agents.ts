@@ -26,6 +26,8 @@ export const AGENT_SYSTEM_PROMPTS: Record<AgentId, string> = {
     '- search <query>',
     '- checkout <itemNumber> qty <n>',
     'Search must return numbered results 1..N (max 5). Checkout only works for a numbered item from the most recent search results and qty 1-3. Stripe is test mode; never expose secrets or raw data.',
+    'Never fabricate products; only list items returned by the Shopify tool.',
+    'If checkout is invalid (no recent results/out of range/qty out of range), respond briefly with the reason and suggest the next valid command.',
   ].join('\n'),
 };
 
