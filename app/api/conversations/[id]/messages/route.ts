@@ -699,13 +699,11 @@ export async function POST(
         });
       }
 
-      const checkoutLink = `<a href="${checkoutUrl}" target="_blank" rel="noopener noreferrer">Open Stripe Checkout ↗</a>`;
-
       const llmMessages = [
         {
           role: 'system' as const,
           content:
-            'You are a commerce assistant. Start with "✅ Stripe checkout created (test mode)" then include exactly one HTML link that opens in a new tab: <a href="<url>" target="_blank" rel="noopener noreferrer">Open Stripe Checkout ↗</a>. After the link, add a short test mode note with card details.',
+            'You are a commerce assistant. Start with "✅ Stripe checkout created (test mode)" then include exactly one markdown link: [Open Stripe Checkout](<url>). Do not add extra links or text after the link.',
         },
         {
           role: 'user' as const,
@@ -734,7 +732,7 @@ export async function POST(
         });
       } catch (error) {
         const durationMs = Date.now() - t0;
-        assistantContent = `✅ Stripe checkout created (test mode)\n\n${checkoutLink}`;
+        assistantContent = `✅ Stripe checkout created (test mode)\n\n[Open Stripe Checkout](${checkoutUrl})`;
 
         logError('openai_request_failed', {
           request_id: requestId,
@@ -748,21 +746,12 @@ export async function POST(
 
       const durationMs = Date.now() - t0;
 
-      const statusLine = '✅ Stripe checkout created (test mode)';
-      const hasCheckoutLink = assistantContent.includes('Open Stripe Checkout ↗') || assistantContent.includes(checkoutUrl);
-
-      if (!hasCheckoutLink) {
-        assistantContent = `${statusLine}\n\n${checkoutLink}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
-      } else {
-        if (!assistantContent.startsWith(statusLine)) {
-          const withoutStatus = assistantContent
-            .replace(/^✅\s*Stripe checkout created\s*\(?.*?\)?\s*/i, '')
-            .trimStart();
-          assistantContent = `${statusLine}\n\n${withoutStatus}`;
-        }
-        if (!assistantContent.includes('Test mode: use card')) {
-          assistantContent = `${assistantContent}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
-        }
+      if (!assistantContent.includes('[Open Stripe Checkout]')) {
+        assistantContent = `✅ Stripe checkout created (test mode)\n\n[Open Stripe Checkout](${checkoutUrl})\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
+      } else if (!assistantContent.includes('✅')) {
+        assistantContent = `✅ Stripe checkout created (test mode)\n\n${assistantContent}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
+      } else if (!assistantContent.includes('Test mode: use card')) {
+        assistantContent = `${assistantContent}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
       }
 
       const [assistantMessage] = await db
