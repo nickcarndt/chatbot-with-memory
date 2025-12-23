@@ -40,6 +40,10 @@ interface Message {
   };
 }
 
+function isValidAgentId(x: string | null): x is AgentId {
+  return x !== null && AGENT_IDS.includes(x as AgentId);
+}
+
 function CheckoutBanner() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -91,16 +95,16 @@ function HomeContent() {
   // Initialize selectedAgent with persistence
   const [selectedAgent, setSelectedAgent] = useState<AgentId>(() => {
     if (typeof window === 'undefined') return 'general';
-    const saved = localStorage.getItem('selected_agent') as AgentId | null;
-    return saved && AGENT_IDS.includes(saved) ? saved : 'general';
+    const saved = localStorage.getItem('selected_agent');
+    return isValidAgentId(saved) ? saved : 'general';
   });
   
   // Set agent to commerce if checkout param exists and no valid agent is persisted
   useEffect(() => {
     const checkoutStatus = searchParams.get('checkout');
     if (checkoutStatus) {
-      const saved = localStorage.getItem('selected_agent') as AgentId | null;
-      if (!saved || !AGENT_IDS.includes(saved)) {
+      const saved = localStorage.getItem('selected_agent');
+      if (!isValidAgentId(saved)) {
         setSelectedAgent('commerce');
       }
     }
