@@ -132,15 +132,10 @@ function parseQty(text: string): number | null {
   return null;
 }
 
-function parseCommerceCommandFreeform(content: string): { type: 'search'; query: string } | { type: 'checkout'; itemNumber: number; qty: number; needsConfirm: boolean } | { type: 'confirm' } | null {
+function parseCommerceCommandFreeform(content: string): { type: 'search'; query: string } | { type: 'checkout'; itemNumber: number; qty: number } | null {
   const text = content.trim();
   if (!text) return null;
   const lower = text.toLowerCase();
-
-  // Confirmation
-  if (/(^|\s)(confirm|yes|proceed|do it|okay|ok)(\s|$)/i.test(text)) {
-    return { type: 'confirm' };
-  }
 
   // Checkout intent
   const isCheckout = /(checkout|buy|purchase|order)/i.test(text);
@@ -149,7 +144,7 @@ function parseCommerceCommandFreeform(content: string): { type: 'search'; query:
     const qtyRaw = parseQty(text);
     const qty = Math.max(1, Math.min(3, qtyRaw ?? 1));
     if (itemNumber && itemNumber > 0) {
-      return { type: 'checkout', itemNumber, qty, needsConfirm: !/(confirm|yes|proceed|do it)/i.test(text) };
+      return { type: 'checkout', itemNumber, qty };
     }
     // If checkout intent without item number, fall back to search
   }
@@ -550,7 +545,7 @@ export async function POST(
           .values({
             conversationId: params.id,
             role: 'assistant',
-            content: `✅ Shopify search complete\n${listText}\n\nReply: checkout 1 qty 1 (test mode).`,
+            content: `✅ Shopify search complete\n${listText}`,
             meta: {
               ...baseMeta,
               durationMs,
@@ -567,37 +562,6 @@ export async function POST(
           ...assistantMessage,
           meta: assistantMessage.meta || {},
         });
-      }
-
-      // checkout flow with confirmation and pending
-      // If command is confirm, attempt to load pendingCheckout from last assistant message
-      let pendingCheckout: { itemNumber: number; qty: number; title: string; price: string } | null = null;
-      if (command.type === 'confirm') {
-        const lastPending = await db
-          .select()
-          .from(messages)
-          .where(
-            sql`${messages.conversationId} = ${params.id} and ${messages.role} = 'assistant' and ${messages.meta} ? 'pendingCheckout'`
-          )
-          .orderBy(desc(messages.createdAt))
-          .limit(1);
-        pendingCheckout = (lastPending[0]?.meta as any)?.pendingCheckout || null;
-        if (!pendingCheckout) {
-          const [assistantMessage] = await db
-            .insert(messages)
-            .values({
-              conversationId: params.id,
-              role: 'assistant',
-              content: 'No pending checkout. Please choose an item first (e.g., buy item 1 qty 1).',
-              meta: baseMeta,
-            })
-            .returning();
-
-          return commerceResponse({
-            ...assistantMessage,
-            meta: assistantMessage.meta || {},
-          });
-        }
       }
 
       const lastSearch = await db
@@ -628,15 +592,8 @@ export async function POST(
         });
       }
 
-      let checkoutItemNumber: number;
-      let checkoutQty: number;
-      if (command.type === 'confirm') {
-        checkoutItemNumber = pendingCheckout!.itemNumber;
-        checkoutQty = pendingCheckout!.qty;
-      } else {
-        checkoutItemNumber = (command as any).itemNumber;
-        checkoutQty = (command as any).qty;
-      }
+      const checkoutItemNumber = command.itemNumber;
+      const checkoutQty = command.qty;
 
       const qty = Math.max(1, Math.min(3, checkoutQty));
       const item = lastSearchResults[checkoutItemNumber - 1];
@@ -648,31 +605,6 @@ export async function POST(
             role: 'assistant',
             content: 'Invalid item number. Please use a number from the latest search results.',
             meta: baseMeta,
-          })
-          .returning();
-
-        return commerceResponse({
-          ...assistantMessage,
-          meta: assistantMessage.meta || {},
-        });
-      }
-
-      if (command.type !== 'confirm' && command.needsConfirm) {
-        const [assistantMessage] = await db
-          .insert(messages)
-          .values({
-            conversationId: params.id,
-            role: 'assistant',
-            content: `About to create a Stripe test checkout for "${item.title}" ($${item.price}) x${qty}. Reply: checkout ${command.itemNumber} qty ${qty} then confirm.`,
-            meta: {
-              ...baseMeta,
-              pendingCheckout: {
-                itemNumber: command.itemNumber,
-                qty,
-                title: item.title,
-                price: item.price,
-              },
-            },
           })
           .returning();
 
@@ -762,11 +694,13 @@ export async function POST(
         });
       }
 
+      const checkoutLink = `<a href="${checkoutUrl}" target="_blank" rel="noopener noreferrer">Open Stripe Checkout ↗</a>`;
+
       const llmMessages = [
         {
           role: 'system' as const,
           content:
-            'You are a commerce assistant. Start with "✅ Stripe checkout created (test mode)" then include exactly one markdown link: [Open Stripe Checkout](<url>). Do not add extra links or text after the link.',
+            'You are a commerce assistant. Start with "✅ Stripe checkout created (test mode)" then include exactly one HTML link that opens in a new tab: <a href="<url>" target="_blank" rel="noopener noreferrer">Open Stripe Checkout ↗</a>. After the link, add a short test mode note with card details.',
         },
         {
           role: 'user' as const,
@@ -795,7 +729,7 @@ export async function POST(
         });
       } catch (error) {
         const durationMs = Date.now() - t0;
-        assistantContent = `✅ Stripe checkout created (test mode)\n\n[Open Stripe Checkout](${checkoutUrl})`;
+        assistantContent = `✅ Stripe checkout created (test mode)\n\n${checkoutLink}`;
 
         logError('openai_request_failed', {
           request_id: requestId,
@@ -809,12 +743,20 @@ export async function POST(
 
       const durationMs = Date.now() - t0;
 
-      if (!assistantContent.includes('[Open Stripe Checkout]')) {
-        assistantContent = `✅ Stripe checkout created (test mode)\n\n[Open Stripe Checkout](${checkoutUrl})\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
-      } else if (!assistantContent.includes('✅')) {
-        assistantContent = `✅ Stripe checkout created (test mode)\n\n${assistantContent}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
-      } else if (!assistantContent.includes('Test mode: use card')) {
-        assistantContent = `${assistantContent}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
+      const statusLine = '✅ Stripe checkout created (test mode)';
+
+      if (!assistantContent.includes(checkoutLink)) {
+        assistantContent = `${statusLine}\n\n${checkoutLink}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
+      } else {
+        if (!assistantContent.startsWith(statusLine)) {
+          const withoutStatus = assistantContent
+            .replace(/^✅\s*Stripe checkout created\s*\(?.*?\)?\s*/i, '')
+            .trimStart();
+          assistantContent = `${statusLine}\n\n${withoutStatus}`;
+        }
+        if (!assistantContent.includes('Test mode: use card')) {
+          assistantContent = `${assistantContent}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
+        }
       }
 
       const [assistantMessage] = await db
