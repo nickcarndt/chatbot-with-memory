@@ -137,6 +137,11 @@ function parseCommerceCommandFreeform(content: string): { type: 'search'; query:
   if (!text) return null;
   const lower = text.toLowerCase();
 
+  // Reject confirmation words that are no longer valid commands
+  if (/(^|\s)(confirm|yes|proceed|do it|okay|ok)(\s|$)/i.test(text)) {
+    return null;
+  }
+
   // Checkout intent
   const isCheckout = /(checkout|buy|purchase|order)/i.test(text);
   if (isCheckout) {
@@ -744,8 +749,9 @@ export async function POST(
       const durationMs = Date.now() - t0;
 
       const statusLine = '✅ Stripe checkout created (test mode)';
+      const hasCheckoutLink = assistantContent.includes('Open Stripe Checkout ↗') || assistantContent.includes(checkoutUrl);
 
-      if (!assistantContent.includes(checkoutLink)) {
+      if (!hasCheckoutLink) {
         assistantContent = `${statusLine}\n\n${checkoutLink}\nTest mode: use card 4242 4242 4242 4242 (any future date, any CVC).`;
       } else {
         if (!assistantContent.startsWith(statusLine)) {
