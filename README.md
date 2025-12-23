@@ -66,12 +66,12 @@ Full-stack AI chatbot with persistent conversations, multi-agent routing, and re
 ## Architecture
 
 ```mermaid
-flowchart TB
-  U[User / Browser] -->|HTTPS| C["Client UI<br/>(Chat + Sidebar + Inspector)"]
+flowchart LR
+  U[User / Browser] -->|HTTPS| UI
 
   subgraph UI["Next.js App (Vercel)"]
-    direction TB
-    C --> API["App Router API Routes<br/>(Node.js Serverless)"]
+    direction LR
+    C["Client UI<br/>(Chat + Sidebar + Inspector)"] --> API["App Router API Routes<br/>(Node.js Serverless)"]
     MW["Middleware<br/>Request ID"] --> API
     API --> LOGS["Structured Logs<br/>(Vercel Logs)"]
   end
