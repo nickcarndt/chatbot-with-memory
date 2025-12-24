@@ -16,7 +16,7 @@ Full-stack AI chatbot with persistent conversations, multi-agent routing, and re
 <p align="center">
   <img src="screenshots/demo.png" width="920" alt="Chatbot with Memory — Agents + Inspector" />
   <br/>
-  <sub><b>Main interface</b> — multi-agent routing + persistent conversations + Inspector drawer.</sub>
+  <sub><b>Main interface</b> — multi-agent chat with persistent history and one-click Inspector.</sub>
 </p>
 
 <table>
@@ -24,24 +24,24 @@ Full-stack AI chatbot with persistent conversations, multi-agent routing, and re
     <td align="center" width="50%">
       <img src="screenshots/agents.png" width="420" alt="Multi-agent routing selector" />
       <br/>
-      <sub><b>Agents</b> — route system prompts by role (Sales/Support/Engineering/Executive).</sub>
+      <sub><b>Agents</b> — route system prompts by role, including a Commerce agent with MCP tools.</sub>
     </td>
     <td align="center" width="50%">
       <img src="screenshots/inspector.png" width="420" alt="Inspector drawer with request metadata" />
       <br/>
-      <sub><b>Inspector</b> — request_id + latency + model + token usage for each response.</sub>
+      <sub><b>Inspector</b> — per-message request_id, latency, model usage, and tool trace.</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
       <img src="screenshots/markdown.png" width="420" alt="Markdown rendering (lists + code blocks)" />
       <br/>
-      <sub><b>Markdown</b> — clean GFM rendering with sanitization (lists, tables, code).</sub>
+      <sub><b>Rich output</b> — safe markdown rendering for lists, tables, and code blocks.</sub>
     </td>
     <td align="center" width="50%">
       <img src="screenshots/search-filter.png" width="420" alt="Search + agent filters" />
       <br/>
-      <sub><b>Search & Filters</b> — fast client-side search + agent filter chips.</sub>
+      <sub><b>Navigation</b> — fast search and role filters across saved conversations.</sub>
     </td>
   </tr>
 </table>
